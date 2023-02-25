@@ -2,13 +2,12 @@ import logging
 import requests
 import uuid
 
-AUTH_BASEPATH = "https://auth.rivianservices.com/auth/api/v1"
-GRAPHQL_BASEPATH = "https://rivian.com/api/gql"
-GRAPHQL_GATEWAY = GRAPHQL_BASEPATH + "/gateway/graphql"
-GRAPHQL_CHARGING = GRAPHQL_BASEPATH + "/chrg/user/graphql"
-GRAPHQL_ORDERS = GRAPHQL_BASEPATH + '/orders/graphql'
-GRAPHQL_CONTENT = GRAPHQL_BASEPATH + '/content/graphql'
-GRAPHQL_TRANSACTIONS = GRAPHQL_BASEPATH + '/t2d/graphql'
+RIVIAN_BASE_PATH = "https://rivian.com/api/gql"
+RIVIAN_GATEWAY_PATH = RIVIAN_BASE_PATH + "/gateway/graphql"
+RIVIAN_CHARGING_PATH = RIVIAN_BASE_PATH + "/chrg/user/graphql"
+RIVIAN_ORDERS_PATH = RIVIAN_BASE_PATH + '/orders/graphql'
+RIVIAN_CONTENT_PATH = RIVIAN_BASE_PATH + '/content/graphql'
+RIVIAN_TRANSACTIONS_PATH = RIVIAN_BASE_PATH + '/t2d/graphql'
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +37,7 @@ class Rivian:
 
     def login(self, username, password):
         self.create_csrf_token()
-        url = GRAPHQL_GATEWAY
+        url = RIVIAN_GATEWAY_PATH
         headers = HEADERS
         headers.update(
             {
@@ -68,7 +67,7 @@ class Rivian:
         return response
 
     def login_with_otp(self, username, otpCode):
-        url = GRAPHQL_GATEWAY
+        url = RIVIAN_GATEWAY_PATH
         headers = HEADERS
         headers.update(
             {
@@ -97,7 +96,7 @@ class Rivian:
         return response
 
     def create_csrf_token(self):
-        url = GRAPHQL_GATEWAY
+        url = RIVIAN_GATEWAY_PATH
         headers = HEADERS
 
         query = {
@@ -147,7 +146,7 @@ class Rivian:
             "query": "query vehicleOrders { orders(input: {orderTypes: [PRE_ORDER, VEHICLE], pageInfo: {from: 0, size: 10000}}) { __typename data { __typename id orderDate state configurationStatus fulfillmentSummaryStatus items { __typename sku } consumerStatuses { __typename isConsumerFlowComplete } } } }",
             "variables": {},
         }
-        response = self.raw_graphql_query(url=GRAPHQL_GATEWAY, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
         return response
 
     def delivery(self, order_id):
@@ -159,7 +158,7 @@ class Rivian:
                 "orderId": order_id,
             },
         }
-        response = self.raw_graphql_query(url=GRAPHQL_GATEWAY, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
         return response
 
     def transaction_status(self, order_id):
@@ -171,7 +170,7 @@ class Rivian:
                 "orderId": order_id
             },
         }
-        response = self.raw_graphql_query(url=GRAPHQL_TRANSACTIONS, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_TRANSACTIONS_PATH, query=query, headers=headers)
         return response
 
     def finance_summary(self, order_id):
@@ -181,7 +180,7 @@ class Rivian:
             "query": "query financeSummary($orderId: ID!) { ...FinanceSummaryFragment } fragment FinanceSummaryFragment on Query { financeSummary(orderId: $orderId) { orderId status financeChoice { financeChoice institutionName paymentMethod trackingNumber preApprovedAmount loanOfficerName loanOfficerContact downPayment rate term rateAndTermSkipped } } }",
             "variables": {"orderId": order_id},
         }
-        response = self.raw_graphql_query(url=GRAPHQL_TRANSACTIONS, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_TRANSACTIONS_PATH, query=query, headers=headers)
         return response
 
     def order(self, order_id):
@@ -191,7 +190,7 @@ class Rivian:
             "query": "query order($id: String!) { order(id: $id) { vin state billingAddress { firstName lastName line1 line2 city state country postalCode } shippingAddress { firstName lastName line1 line2 city state country postalCode } orderCancelDate orderEmail currency locale storeId type subtotal discountTotal taxTotal feesTotal paidTotal remainingTotal outstandingBalance costAfterCredits total payments { id intent date method amount referenceNumber status card { last4 expiryDate brand } bank { bankName country last4 } transactionNotes } tradeIns { tradeInReferenceId amount } vehicle { vehicleId vin modelYear model make } items { id discounts { total items {  amount  title  code } } subtotal quantity title productId type unitPrice fees { items {  description  amount  code  type } total } taxes { items {  description  amount  code  rate  type } total } sku shippingAddress { firstName lastName line1 line2 city state country postalCode } configuration { ruleset {  meta {  rulesetId  storeId  country  vehicle  version  effectiveDate  currency  locale  availableLocales  }  defaults {  basePrice  initialSelection  }  groups  options  specs  rules } basePrice version options {  optionId  optionName  optionDetails {  name  attrs  price  visualExterior  visualInterior  hidden  disabled  required  }  groupId  groupName  groupDetails {  name  attrs  multiselect  required  options  }  price } } } }}",
             "variables": {"id": order_id},
         }
-        response = self.raw_graphql_query(url=GRAPHQL_ORDERS, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_ORDERS_PATH, query=query, headers=headers)
         return response
 
     def retail_orders(self):
@@ -214,7 +213,7 @@ class Rivian:
                 }
             },
         }
-        response = self.raw_graphql_query(url=GRAPHQL_ORDERS, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_ORDERS_PATH, query=query, headers=headers)
         return response
 
     def get_order(self, order_id):
@@ -226,7 +225,7 @@ class Rivian:
                 "orderId": order_id
             },
         }
-        response = self.raw_graphql_query(url=GRAPHQL_ORDERS, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_ORDERS_PATH, query=query, headers=headers)
         return response
 
     def payment_methods(self):
@@ -236,7 +235,7 @@ class Rivian:
             "query": "query paymentMethods { paymentMethods { id type default card { lastFour brand expiration postalCode } } }",
             "variables": {},
         }
-        response = self.raw_graphql_query(url=GRAPHQL_ORDERS, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_ORDERS_PATH, query=query, headers=headers)
         return response
 
     def get_user_information(self):
@@ -246,7 +245,7 @@ class Rivian:
             "query": "query getUserInfo {currentUser {__typename id vehicles {id vin vas {__typename vasVehicleId vehiclePublicKey } roles state createdAt updatedAt vehicle { __typename id vin modelYear make model expectedBuildDate plannedBuildDate expectedGeneralAssemblyStartDate actualGeneralAssemblyDate } } }}",
             "variables": None,
         }
-        response = self.raw_graphql_query(url=GRAPHQL_GATEWAY, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
         return response
 
     def get_vehicle_state(self, vehicle_id):
@@ -258,7 +257,7 @@ class Rivian:
                 'vehicleID': vehicle_id,
             },
         }
-        response = self.raw_graphql_query(url=GRAPHQL_GATEWAY, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
         return response
 
     def check_by_rivian_id(self):
@@ -268,7 +267,7 @@ class Rivian:
             "query": "query CheckByRivianId { chargepoint { checkByRivianId } }",
             "variables": {},
         }
-        response = self.raw_graphql_query(url=GRAPHQL_CHARGING, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_CHARGING_PATH, query=query, headers=headers)
         return response
 
     def get_linked_email_for_rivian_id(self):
@@ -278,7 +277,7 @@ class Rivian:
             "query": "query getLinkedEmailForRivianId { chargepoint { getLinkedEmailForRivianId { email } } }",
             "variables": {},
         }
-        response = self.raw_graphql_query(url=GRAPHQL_CHARGING, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_CHARGING_PATH, query=query, headers=headers)
         return response
 
     def get_parameter_store_values(self):
@@ -290,7 +289,7 @@ class Rivian:
                 "keys": ["FF_ACCOUNT_ESTIMATED_DELIVERY_WINDOW_STATIC_MSG"]
             },
         }
-        response = self.raw_graphql_query(url=GRAPHQL_ORDERS, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_ORDERS_PATH, query=query, headers=headers)
         return response
 
     def get_vehicle(self, vehicle_id):
@@ -302,7 +301,7 @@ class Rivian:
                 "getVehicleId": vehicle_id
             },
         }
-        response = self.raw_graphql_query(url=GRAPHQL_GATEWAY, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
         return response
 
     def get_registered_wallboxes(self):
@@ -312,7 +311,7 @@ class Rivian:
             "variables": {},
             "query": "query getRegisteredWallboxes { getRegisteredWallboxes { __typename wallboxId userId wifiId name linked latitude longitude chargingStatus power currentVoltage currentAmps softwareVersion model serialNumber maxPower maxVoltage maxAmps } }"
         }
-        response = self.raw_graphql_query(url=GRAPHQL_CHARGING, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_CHARGING_PATH, query=query, headers=headers)
         return response
 
     def get_provisioned_camp_speakers(self):
@@ -322,7 +321,7 @@ class Rivian:
             "query": "query GetProvisionedCampSpeakers { currentUser { __typename vehicles { __typename id connectedProducts { __typename ... on CampSpeaker { serialNumber id } } } } }",
             "variables": {},
         }
-        response = self.raw_graphql_query(url=GRAPHQL_GATEWAY, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
         return response
 
     def get_vehicle_images(self):
@@ -335,7 +334,7 @@ class Rivian:
                 "resolution": "hdpi"
             },
         }
-        response = self.raw_graphql_query(url=GRAPHQL_GATEWAY, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
         return response
 
     def get_user_info(self):
@@ -345,7 +344,7 @@ class Rivian:
             "query": "query getUserInfo { currentUser { __typename id firstName lastName email address { __typename country } vehicles { __typename id name owner roles vin vas { __typename vasVehicleId vehiclePublicKey } vehicle { __typename model mobileConfiguration { __typename trimOption { __typename optionId optionName } exteriorColorOption { __typename optionId optionName } interiorColorOption { __typename optionId optionName } } vehicleState { __typename supportedFeatures { __typename name status } } otaEarlyAccessStatus } settings { __typename name { __typename value } } } enrolledPhones { __typename vas { __typename vasPhoneId publicKey } enrolled { __typename deviceType deviceName vehicleId identityId shortName } } pendingInvites { __typename id invitedByFirstName role status vehicleId vehicleModel email } } }",
             "variables": {},
         }
-        response = self.raw_graphql_query(url=GRAPHQL_GATEWAY, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
         return response
 
     def user(self):
@@ -356,5 +355,5 @@ class Rivian:
             "query": "query user { user { email { email } phone { formatted } firstName lastName addresses { id type line1 line2 city state country postalCode } newsletterSubscription smsSubscription registrationChannels2FA userId vehicles {id highestPriorityRole __typename } invites (filterStates: [PENDING]) {id inviteState vehicleModel vehicleId creatorFirstName} orderSnapshots(filterTypes: [PRE_ORDER, VEHICLE, RETAIL]) { ...OrderSnapshotsFragment } }} fragment OrderSnapshotsFragment on OrderSnapshot { id total paidTotal subtotal state configurationStatus currency orderDate type fulfillmentSummaryStatus }",
             "variables": {},
         }
-        response = self.raw_graphql_query(url=GRAPHQL_ORDERS, query=query, headers=headers)
+        response = self.raw_graphql_query(url=RIVIAN_ORDERS_PATH, query=query, headers=headers)
         return response

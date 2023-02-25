@@ -20,27 +20,27 @@ None
 
 ### Login
 ```
-python rivian_cli.py --login
+bin/rivian_cli --login
 ```
 
 ### Vehicle Orders
 ```
-python rivian_cli.py --vehicle_orders
+bin/rivian_cli --vehicle_orders
 ```
 
 ### Vehicle Orders hiding PII
 ```
-python rivian_cli.py --vehicle_orders --privacy
+bin/rivian_cli --vehicle_orders --privacy
 ```
 
 ### Vehicle Orders with raw dumps
 ```
-python rivian_cli.py --vehicle_orders --verbose
+bin/rivian_cli --vehicle_orders --verbose
 ```
 
 ### Other commands
 ```
-python rivian_cli.py --help
+bin/rivian_cli --help
 ```
 
 ## CLI Notes

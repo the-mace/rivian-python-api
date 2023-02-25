@@ -349,7 +349,7 @@ def test_graphql(verbose):
             "locale": "en_US",
         },
     }
-    response = rivian.raw_graphql_query(url=GRAPHQL_CONTENT, query=query, headers=rivian.gateway_headers())
+    response = rivian.raw_graphql_query(url=RIVIAN_CONTENT_PATH, query=query, headers=rivian.gateway_headers())
     response_json = response.json()
     if verbose:
         print(f"test_graphql:\n{response_json}")

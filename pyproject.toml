@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rivian-python-api"
+version = "0.1.0"
+authors = [
+  { name="Robert Mason", email="rivian@crickers.com" },
+]
+description = "Python API for Rivian"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/the-mace/rivian-python-api"
+"Bug Tracker" = "https://github.com/the-mace/rivian-python-api/issues"
