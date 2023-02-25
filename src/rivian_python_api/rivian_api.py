@@ -12,7 +12,7 @@ RIVIAN_TRANSACTIONS_PATH = RIVIAN_BASE_PATH + '/t2d/graphql'
 log = logging.getLogger(__name__)
 
 HEADERS = {
-    "User-Agent": "RivianApp/707 CFNetwork/1237 Darwin/20.4.0",
+    "User-Agent": "RivianApp/1304 CFNetwork/1404.0.5 Darwin/22.3.0",
     "Accept": "application/json",
     "Content-Type": "application/json",
     "Apollographql-Client-Name": "com.rivian.ios.consumer-apollo-ios",
