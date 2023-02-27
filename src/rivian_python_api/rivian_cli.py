@@ -431,7 +431,7 @@ def main():
             for order in rivian_info['retail_orders']:
                 order_id = 'xxxx' + order['id'][-4:] if args.privacy else order['id']
                 print(f"Order ID: {order_id}")
-                print(f"Order Date: {order['orderDate']}")
+                print(f"Order Date: {order['orderDate'][:10] if args.privacy else order['orderDate']}")
                 print(f"Order State: {order['state']}")
                 print(f"Status: {order['fulfillmentSummaryStatus']}")
                 print(f"Items: {', '.join(order['items'])}")
