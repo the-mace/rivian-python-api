@@ -5,6 +5,7 @@ import os
 import argparse
 from rivian_api import *
 import pickle
+from dateutil.parser import parse
 
 
 PICKLE_FILE = 'rivian_auth.pickle'
@@ -404,7 +405,14 @@ def main():
                 delivery_status = delivery(order['id'], args.verbose)
                 print(f"Delivery carrier: {delivery_status['carrier']}")
                 print(f"Delivery status: {delivery_status['status']}")
-                print(f"Delivery appointment details: {delivery_status['appointmentDetails'] if delivery_status['appointmentDetails'] else 'Not available yet'}")
+                if delivery_status['appointmentDetails']:
+                    print("Delivery appointment details:")
+                    start = parse(delivery_status['appointmentDetails']['startDateTime'])
+                    end = parse(delivery_status['appointmentDetails']['endDateTime'])
+                    print(f'   Start: {start.strftime("%m/%d/%Y, %H:%M %p")}')
+                    print(f'   End  : {end.strftime("%m/%d/%Y, %H:%M %p")}')
+                else:
+                    print("Delivery appointment details: Not available yet")
 
                 # Get transaction steps
                 transaction_steps = transaction_status(order['id'], args.verbose)
@@ -446,7 +454,7 @@ def main():
             for i in details:
                 value = details[i]
                 if i in ('vin', 'vehicleId') and args.privacy:
-                    value = 'xxxx' + value[-4:]
+                    value = value[-8:-3] + 'xxx'
                 vehicle[i] = value
             rivian_info['vehicles'].append(vehicle)
 
