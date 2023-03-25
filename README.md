@@ -6,7 +6,9 @@ Based on information from https://github.com/kaedenbrinkman/rivian-api.
 
 ## State
 
-Pre-delivery commands, have not yet been able to test vehicle commands.
+* Have not yet tested actions (open frunk etc.)
+* Polling impact on sleep not yet known
+* No known way to get speed yet
 
 ## Dependencies
 
@@ -36,6 +38,16 @@ bin/rivian_cli --vehicle_orders --privacy
 ### Vehicle Orders with raw dumps
 ```
 bin/rivian_cli --vehicle_orders --verbose
+```
+
+### Vehicle State
+```
+bin/rivian_cli --state
+```
+
+### Vehicle State Polling
+```
+bin/rivian_cli --poll
 ```
 
 ### Other commands

@@ -242,19 +242,155 @@ class Rivian:
         headers = self.gateway_headers()
         query = {
             "operationName": "getUserInfo",
-            "query": "query getUserInfo {currentUser {__typename id vehicles {id vin vas {__typename vasVehicleId vehiclePublicKey } roles state createdAt updatedAt vehicle { __typename id vin modelYear make model expectedBuildDate plannedBuildDate expectedGeneralAssemblyStartDate actualGeneralAssemblyDate } } }}",
+            "query": "query getUserInfo { currentUser { __typename id firstName lastName email address { __typename country } vehicles { __typename id name owner roles vin vas { __typename vasVehicleId vehiclePublicKey } state createdAt updatedAt vehicle { __typename id vin modelYear make model expectedBuildDate plannedBuildDate expectedGeneralAssemblyStartDate actualGeneralAssemblyDate mobileConfiguration { __typename trimOption { __typename optionId optionName } exteriorColorOption { __typename optionId optionName } interiorColorOption { __typename optionId optionName } } vehicleState { __typename supportedFeatures { __typename name status } } otaEarlyAccessStatus } settings { __typename name { __typename value } } } enrolledPhones { __typename vas { __typename vasPhoneId publicKey } enrolled { __typename deviceType deviceName vehicleId identityId shortName } } pendingInvites { __typename id invitedByFirstName role status vehicleId vehicleModel email } } }",
+            # "query": "query getUserInfo {currentUser {__typename id firstName lastName email address { __typename country } vehicles {id name owner roles vin vas {__typename vasVehicleId vehiclePublicKey } state createdAt updatedAt vehicle { __typename id vin modelYear make model expectedBuildDate plannedBuildDate expectedGeneralAssemblyStartDate actualGeneralAssemblyDate } } }}",
             "variables": None,
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
         return response
 
-    def get_vehicle_state(self, vehicle_id):
+    def get_vehicle_state(self, vehicle_id, minimal=False):
         headers = self.gateway_headers()
+        if minimal:
+            query = "query GetVehicleState($vehicleID: String!) { vehicleState(id: $vehicleID) { " \
+                    "cloudConnection { lastSync } " \
+                    "powerState { value } " \
+                    "driveMode { value } " \
+                    "gearStatus { value } " \
+                    "vehicleMileage { value } " \
+                    "batteryLevel { value } " \
+                    "distanceToEmpty { value } " \
+                    "gnssLocation { latitude longitude } " \
+                    "chargerStatus { value } " \
+                    "chargerState { value } " \
+                    "batteryLimit { value } " \
+                    "timeToEndOfCharge { value } " \
+                    "} }"
+        else:
+            query = "query GetVehicleState($vehicleID: String!) { " \
+                    "vehicleState(id: $vehicleID) { __typename " \
+                    "cloudConnection { __typename lastSync } " \
+                    "gnssLocation { __typename latitude longitude timeStamp } " \
+                    "alarmSoundStatus { __typename timeStamp value } " \
+                    "timeToEndOfCharge { __typename timeStamp value } " \
+                    "doorFrontLeftLocked { __typename timeStamp value } " \
+                    "doorFrontLeftClosed { __typename timeStamp value } " \
+                    "doorFrontRightLocked { __typename timeStamp value } " \
+                    "doorFrontRightClosed { __typename timeStamp value } " \
+                    "doorRearLeftLocked { __typename timeStamp value } " \
+                    "doorRearLeftClosed { __typename timeStamp value } " \
+                    "doorRearRightLocked { __typename timeStamp value } " \
+                    "doorRearRightClosed { __typename timeStamp value } " \
+                    "windowFrontLeftClosed { __typename timeStamp value } " \
+                    "windowFrontRightClosed { __typename timeStamp value } " \
+                    "windowRearLeftClosed { __typename timeStamp value } " \
+                    "windowRearRightClosed { __typename timeStamp value } " \
+                    "windowFrontLeftCalibrated { __typename timeStamp value } " \
+                    "windowFrontRightCalibrated { __typename timeStamp value } " \
+                    "windowRearLeftCalibrated { __typename timeStamp value } " \
+                    "windowRearRightCalibrated { __typename timeStamp value } " \
+                    "closureFrunkLocked { __typename timeStamp value } " \
+                    "closureFrunkClosed { __typename timeStamp value } " \
+                    "gearGuardLocked { __typename timeStamp value } " \
+                    "closureLiftgateLocked { __typename timeStamp value } " \
+                    "closureLiftgateClosed { __typename timeStamp value } " \
+                    "windowRearLeftClosed { __typename timeStamp value } " \
+                    "windowRearRightClosed { __typename timeStamp value } " \
+                    "closureSideBinLeftLocked { __typename timeStamp value } " \
+                    "closureSideBinLeftClosed { __typename timeStamp value } " \
+                    "closureSideBinRightLocked { __typename timeStamp value } " \
+                    "closureSideBinRightClosed { __typename timeStamp value } " \
+                    "closureTailgateLocked { __typename timeStamp value } " \
+                    "closureTailgateClosed { __typename timeStamp value } " \
+                    "closureTonneauLocked { __typename timeStamp value } " \
+                    "closureTonneauClosed { __typename timeStamp value } " \
+                    "wiperFluidState { __typename timeStamp value } " \
+                    "powerState { __typename timeStamp value } " \
+                    "batteryHvThermalEventPropagation { __typename timeStamp value } " \
+                    "vehicleMileage { __typename timeStamp value } " \
+                    "brakeFluidLow { __typename timeStamp value } " \
+                    "gearStatus { __typename timeStamp value } " \
+                    "tirePressureStatusFrontLeft { __typename timeStamp value } " \
+                    "tirePressureStatusValidFrontLeft { __typename timeStamp value } " \
+                    "tirePressureStatusFrontRight { __typename timeStamp value } " \
+                    "tirePressureStatusValidFrontRight { __typename timeStamp value } " \
+                    "tirePressureStatusRearLeft { __typename timeStamp value } " \
+                    "tirePressureStatusValidRearLeft { __typename timeStamp value } " \
+                    "tirePressureStatusRearRight { __typename timeStamp value } " \
+                    "tirePressureStatusValidRearRight { __typename timeStamp value } " \
+                    "batteryLevel { __typename timeStamp value } " \
+                    "chargerState { __typename timeStamp value } " \
+                    "batteryLimit { __typename timeStamp value } " \
+                    "remoteChargingAvailable { __typename timeStamp value } " \
+                    "batteryHvThermalEvent { __typename timeStamp value } " \
+                    "rangeThreshold { __typename timeStamp value } " \
+                    "distanceToEmpty { __typename timeStamp value } " \
+                    "otaAvailableVersion { __typename timeStamp value } " \
+                    "otaAvailableVersionWeek { __typename timeStamp value } " \
+                    "otaAvailableVersionYear { __typename timeStamp value } " \
+                    "otaCurrentVersion { __typename timeStamp value } " \
+                    " otaCurrentVersionNumber { __typename timeStamp value } " \
+                    "otaCurrentVersionWeek { __typename timeStamp value } " \
+                    "otaCurrentVersionYear { __typename timeStamp value } " \
+                    "otaDownloadProgress { __typename timeStamp value } " \
+                    "otaInstallDuration { __typename timeStamp value } " \
+                    "otaInstallProgress { __typename timeStamp value } " \
+                    "otaInstallReady { __typename timeStamp value } " \
+                    "otaInstallTime { __typename timeStamp value } " \
+                    "otaInstallType { __typename timeStamp value } " \
+                    "otaStatus { __typename timeStamp value } " \
+                    "otaCurrentStatus { __typename timeStamp value } " \
+                    "cabinClimateInteriorTemperature { __typename timeStamp value } " \
+                    "cabinPreconditioningStatus { __typename timeStamp value } " \
+                    "cabinPreconditioningType { __typename timeStamp value } " \
+                    "petModeStatus { __typename timeStamp value } " \
+                    "petModeTemperatureStatus { __typename timeStamp value } " \
+                    "cabinClimateDriverTemperature { __typename timeStamp value } " \
+                    "gearGuardVideoStatus { __typename timeStamp value } " \
+                    "gearGuardVideoMode { __typename timeStamp value } " \
+                    "gearGuardVideoTermsAccepted { __typename timeStamp value } " \
+                    "defrostDefogStatus { __typename timeStamp value } " \
+                    "steeringWheelHeat { __typename timeStamp value } " \
+                    "seatFrontLeftHeat { __typename timeStamp value } " \
+                    "seatFrontRightHeat { __typename timeStamp value } " \
+                    "seatRearLeftHeat { __typename timeStamp value } " \
+                    "seatRearRightHeat { __typename timeStamp value } " \
+                    "chargerStatus { __typename timeStamp value } " \
+                    "seatFrontLeftVent { __typename timeStamp value } " \
+                    "seatFrontRightVent { __typename timeStamp value } " \
+                    "chargerDerateStatus { __typename timeStamp value } " \
+                    "driveMode { __typename timeStamp value } " \
+                    "} }"
+
         query = {
             "operationName": "GetVehicleState",
-            "query": "query GetVehicleState($vehicleID: String!) { vehicleState(id: $vehicleID) { __typename gnssLocation { __typename latitude longitude timeStamp } alarmSoundStatus { __typename timeStamp value } timeToEndOfCharge { __typename timeStamp value } doorFrontLeftLocked { __typename timeStamp value } doorFrontLeftClosed { __typename timeStamp value } doorFrontRightLocked { __typename timeStamp value } doorFrontRightClosed { __typename timeStamp value } doorRearLeftLocked { __typename timeStamp value } doorRearLeftClosed { __typename timeStamp value } doorRearRightLocked { __typename timeStamp value } doorRearRightClosed { __typename timeStamp value } windowFrontLeftClosed { __typename timeStamp value } windowFrontRightClosed { __typename timeStamp value } windowFrontLeftCalibrated { __typename timeStamp value } windowFrontRightCalibrated { __typename timeStamp value } windowRearLeftCalibrated { __typename timeStamp value } windowRearRightCalibrated { __typename timeStamp value } closureFrunkLocked { __typename timeStamp value } closureFrunkClosed { __typename timeStamp value } gearGuardLocked { __typename timeStamp value } closureLiftgateLocked { __typename timeStamp value } closureLiftgateClosed { __typename timeStamp value } windowRearLeftClosed { __typename timeStamp value } windowRearRightClosed { __typename timeStamp value } closureSideBinLeftLocked { __typename timeStamp value } closureSideBinLeftClosed { __typename timeStamp value } closureSideBinRightLocked { __typename timeStamp value } closureSideBinRightClosed { __typename timeStamp value } closureTailgateLocked { __typename timeStamp value } closureTailgateClosed { __typename timeStamp value } closureTonneauLocked { __typename timeStamp value } closureTonneauClosed { __typename timeStamp value } wiperFluidState { __typename timeStamp value } powerState { __typename timeStamp value } batteryHvThermalEventPropagation { __typename timeStamp value } vehicleMileage { __typename timeStamp value } brakeFluidLow { __typename timeStamp value } gearStatus { __typename timeStamp value } tirePressureStatusFrontLeft { __typename timeStamp value } tirePressureStatusValidFrontLeft { __typename timeStamp value } tirePressureStatusFrontRight { __typename timeStamp value } tirePressureStatusValidFrontRight { __typename timeStamp value } tirePressureStatusRearLeft { __typename timeStamp value } tirePressureStatusValidRearLeft { __typename timeStamp value } tirePressureStatusRearRight { __typename timeStamp value } tirePressureStatusValidRearRight { __typename timeStamp value } batteryLevel { __typename timeStamp value } chargerState { __typename timeStamp value } batteryLimit { __typename timeStamp value } remoteChargingAvailable { __typename timeStamp value } batteryHvThermalEvent { __typename timeStamp value } rangeThreshold { __typename timeStamp value } distanceToEmpty { __typename timeStamp value } otaAvailableVersionNumber { __typename timeStamp value } otaAvailableVersionWeek { __typename timeStamp value } otaAvailableVersionYear { __typename timeStamp value } otaCurrentVersionNumber { __typename timeStamp value } otaCurrentVersionWeek { __typename timeStamp value } otaCurrentVersionYear { __typename timeStamp value } otaDownloadProgress { __typename timeStamp value } otaInstallDuration { __typename timeStamp value } otaInstallProgress { __typename timeStamp value } otaInstallReady { __typename timeStamp value } otaInstallTime { __typename timeStamp value } otaInstallType { __typename timeStamp value } otaStatus { __typename timeStamp value } otaCurrentStatus { __typename timeStamp value } cabinClimateInteriorTemperature { __typename timeStamp value } cabinPreconditioningStatus { __typename timeStamp value } cabinPreconditioningType { __typename timeStamp value } petModeStatus { __typename timeStamp value } petModeTemperatureStatus { __typename timeStamp value } cabinClimateDriverTemperature { __typename timeStamp value } gearGuardVideoStatus { __typename timeStamp value } gearGuardVideoMode { __typename timeStamp value } gearGuardVideoTermsAccepted { __typename timeStamp value } defrostDefogStatus { __typename timeStamp value } steeringWheelHeat { __typename timeStamp value } seatFrontLeftHeat { __typename timeStamp value } seatFrontRightHeat { __typename timeStamp value } seatRearLeftHeat { __typename timeStamp value } seatRearRightHeat { __typename timeStamp value } chargerStatus { __typename timeStamp value } seatFrontLeftVent { __typename timeStamp value } seatFrontRightVent { __typename timeStamp value } chargerDerateStatus { __typename timeStamp value } driveMode { __typename timeStamp value } } }",
+            "query": query,
             "variables": {
                 'vehicleID': vehicle_id,
+            },
+        }
+        response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
+        return response
+
+    def get_vehicle_last_connection(self, vehicle_id):
+        headers = self.gateway_headers()
+        query = {
+            "operationName": "GetVehicleLastConnection",
+            "query": "query GetVehicleLastConnection($vehicleID: String!) { vehicleState(id: $vehicleID) { __typename cloudConnection { __typename lastSync } } }",
+            "variables": {
+                'vehicleID': vehicle_id,
+            },
+        }
+        response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
+        return response
+
+    def get_ota_details(self, vehicle_id):
+        headers = self.gateway_headers()
+        query = {
+            "operationName": "GetVehicle",
+            "query": "query GetVehicle($vehicleId: String!) { getVehicle(id: $vehicleId) { availableOTAUpdateDetails { url version locale } currentOTAUpdateDetails { url version locale } } }",
+            "variables": {
+                'vehicleId': vehicle_id,
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
@@ -333,16 +469,6 @@ class Rivian:
                 "extension": "webp",
                 "resolution": "hdpi"
             },
-        }
-        response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
-        return response
-
-    def get_user_info(self):
-        headers = self.gateway_headers()
-        query = {
-            "operationName": "getUserInfo",
-            "query": "query getUserInfo { currentUser { __typename id firstName lastName email address { __typename country } vehicles { __typename id name owner roles vin vas { __typename vasVehicleId vehiclePublicKey } vehicle { __typename model mobileConfiguration { __typename trimOption { __typename optionId optionName } exteriorColorOption { __typename optionId optionName } interiorColorOption { __typename optionId optionName } } vehicleState { __typename supportedFeatures { __typename name status } } otaEarlyAccessStatus } settings { __typename name { __typename value } } } enrolledPhones { __typename vas { __typename vasPhoneId publicKey } enrolled { __typename deviceType deviceName vehicleId identityId shortName } } pendingInvites { __typename id invitedByFirstName role status vehicleId vehicleModel email } } }",
-            "variables": {},
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
         return response

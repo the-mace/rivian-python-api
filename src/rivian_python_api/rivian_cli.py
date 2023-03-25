@@ -6,7 +6,10 @@ import argparse
 from rivian_api import *
 import pickle
 from dateutil.parser import parse
+from dateutil import tz
+import time
 
+POLL_FREQUENCY = 10
 
 PICKLE_FILE = 'rivian_auth.pickle'
 
@@ -66,15 +69,7 @@ def user_information(verbose):
     response_json = response.json()
     if verbose:
         print(f"user_information:\n{response_json}")
-
-
-def get_vehicle_state(vehicle_id, verbose):
-    rivian = get_rivian_object()
-    response = rivian.get_vehicle_state(vehicle_id=vehicle_id)
-    response_json = response.json()
-    if verbose:
-        print(response_json)
-    # TODO
+    return response_json['data']['currentUser']
 
 
 def vehicle_orders(verbose):
@@ -197,9 +192,28 @@ def get_vehicle(vehicle_id, verbose):
     response_json = response.json()
     if verbose:
         print(f"get_vehicle:\n{response_json}")
+    data = []
+    for u in response_json['data']['getVehicle']['invitedUsers']:
+        if u['__typename'] != 'ProvisionedUser':
+            continue
+        ud = {
+            'firstName': u['firstName'],
+            'lastName': u['lastName'],
+            'email': u['email'],
+            'roles': ', '.join(u['roles']),
+            'devices': [],
+        }
+        for d in u['devices']:
+            ud['devices'].append({
+                "deviceName": d["deviceName"],
+                "isPaired": d["isPaired"],
+                "isEnabled": d["isEnabled"],
+            })
+        data.append(ud)
+    return data
 
 
-def get_vehicle_state(vehicle_id, verbose):
+def get_vehicle_state(vehicle_id, verbose, minimal=False):
     rivian = get_rivian_object()
     try:
         response = rivian.get_vehicle_state(vehicle_id=vehicle_id)
@@ -210,6 +224,36 @@ def get_vehicle_state(vehicle_id, verbose):
     response_json = response.json()
     if verbose:
         print(f"get_vehicle_state:\n{response_json}")
+    return response_json['data']['vehicleState']
+
+
+def get_vehicle_last_seen(vehicle_id, verbose):
+    rivian = get_rivian_object()
+    try:
+        response = rivian.get_vehicle_last_connection(vehicle_id=vehicle_id)
+    except Exception as e:
+        _, _, message, _, _ = e.args
+        print(f"{message['errors'][0]['message']}")
+        return None
+    response_json = response.json()
+    if verbose:
+        print(f"get_vehicle_last_seen:\n{response_json}")
+    last_seen = parse(response_json['data']['vehicleState']['cloudConnection']['lastSync'])
+    return last_seen
+
+
+def get_ota_info(vehicle_id, verbose):
+    rivian = get_rivian_object()
+    try:
+        response = rivian.get_ota_details(vehicle_id=vehicle_id)
+    except Exception as e:
+        _, _, message, _, _ = e.args
+        print(f"{message['errors'][0]['message']}")
+        return None
+    response_json = response.json()
+    if verbose:
+        print(f"get_ota_info:\n{response_json}")
+    return response_json['data']['getVehicle']
 
 
 def transaction_status(order_id, verbose):
@@ -295,6 +339,7 @@ def images(verbose):
     print(images)
     return images
 
+
 def get_user_info(verbose):
     rivian = get_rivian_object()
     response = rivian.get_user_info()
@@ -356,6 +401,21 @@ def test_graphql(verbose):
         print(f"test_graphql:\n{response_json}")
 
 
+def show_local_time(ts):
+    t = parse(ts)
+    to_zone = tz.tzlocal()
+    t = t.astimezone(to_zone)
+    return t.strftime("%m/%d/%Y, %H:%M%p %Z")
+
+
+def celsius_to_fahrenheit(c):
+    return (c * 9/5) + 32
+
+
+def meters_to_miles(m):
+    return m / 1609.0
+
+
 def main():
     parser = argparse.ArgumentParser(description='Rivian CLI')
     parser.add_argument('--login', help='Login to account', required=False, action='store_true')
@@ -371,6 +431,13 @@ def main():
     parser.add_argument('--charge_ids', help='Show charge_ids', required=False, action='store_true')
     parser.add_argument('--verbose', help='Verbose output', required=False, action='store_true')
     parser.add_argument('--privacy', help='Fuzz order/vin info', required=False, action='store_true')
+    parser.add_argument('--state', help='Get vehicle state', required=False, action='store_true')
+    parser.add_argument('--vehicle', help='Get vehicle access info', required=False, action='store_true')
+    parser.add_argument('--vehicle_id', help='Vehicle to query (defaults to first one found)', required=False)
+    parser.add_argument('--last_seen', help='Timestamp vehicle was last seen', required=False, action='store_true')
+    parser.add_argument('--user_info', help='Show user information', required=False, action='store_true')
+    parser.add_argument('--ota', help='Show user information', required=False, action='store_true')
+    parser.add_argument('--poll', help='Poll vehicle state', required=False, action='store_true')
     args = parser.parse_args()
 
     if args.login:
@@ -382,8 +449,13 @@ def main():
         'vehicles': [],
     }
 
-    if args.vehicle_orders or args.vehicles:
-        rivian_info['vehicle_orders'] = vehicle_orders(args.verbose)
+    vehicle_id = None
+
+    needs_vehicle = args.vehicles or args.vehicle or args.state or args.last_seen or args.ota or args.poll
+
+    if args.vehicle_orders or needs_vehicle:
+        verbose = args.vehicle_orders
+        rivian_info['vehicle_orders'] = vehicle_orders(verbose)
 
     if args.vehicle_orders:
         if len(rivian_info['vehicle_orders']):
@@ -447,9 +519,11 @@ def main():
         else:
             print("No Retail Orders found")
 
-    if args.vehicles:
+    if args.vehicles or needs_vehicle:
+        found_vehicle = False
+        verbose = args.vehicles
         for order in rivian_info['vehicle_orders']:
-            details = order_details(order['id'], args.verbose)
+            details = order_details(order['id'], verbose)
             vehicle = {}
             for i in details:
                 value = details[i]
@@ -457,7 +531,18 @@ def main():
                     value = value[-8:-3] + 'xxx'
                 vehicle[i] = value
             rivian_info['vehicles'].append(vehicle)
+            if not found_vehicle:
+                if args.vehicle_id:
+                    if vehicle['vehicleId'] == args.vehicle_id:
+                        found_vehicle = True
+                else:
+                    vehicle_id = vehicle['vehicleId']
+                    found_vehicle = True
+        if not found_vehicle:
+            print(f"Didn't find vehicle ID {args.vehicle_id}")
+            return -1
 
+    if args.vehicles:
         if len(rivian_info['vehicles']):
             print("Vehicles:")
             for v in rivian_info['vehicles']:
@@ -513,12 +598,24 @@ def main():
         rivian_info['speakers'] = speakers(args.verbose)
         if len(rivian_info['speakers']):
             print("Speakers:")
-            for c in rivian_info['speakers']:
-                for i in c:
-                    print(f"{i}: {c[i]}")
-                print("\n")
+            for v in rivian_info['speakers']:
+                print(f"Vehicle ID: {v['id']}")
+                for c in v['connectedProducts']:
+                    print(f"   {c['__typename']}: Serial # {c['serialNumber']}")
         else:
             print("No Speakers found")
+
+    if args.ota:
+        ota = get_ota_info(vehicle_id, args.verbose)
+        if len(ota):
+            if ota['availableOTAUpdateDetails']:
+                print(f"Available OTA Version: {ota['currentOTAUpdateDetails']['version']}")
+                print(f"Available OTA Release notes: {ota['currentOTAUpdateDetails']['url']}")
+            if ota['currentOTAUpdateDetails']:
+                print(f"Current Version: {ota['currentOTAUpdateDetails']['version']}")
+                print(f"Current Version Release notes: {ota['currentOTAUpdateDetails']['url']}")
+        else:
+            print("No OTA info available")
 
     # Basic images for vehicle
     if args.images:
@@ -532,8 +629,23 @@ def main():
         else:
             print("No Images found")
 
-    # Not too useful right now - maybe after vehicle delivery?
-    # user_information(args.verbose)
+    if args.user_info:
+        print("User Vehicles:")
+        user_info = user_information(args.verbose)
+        for v in user_info['vehicles']:
+            print(f"Vehicle ID: {v['id']}")
+            if args.privacy:
+                vin = v['vin'][-8:-3] + 'xxx'
+            else:
+                vin = v['vin']
+            print(f"   Vin: {vin}")
+            print(f"   State: {v['state']}")
+            print(f"   Kind: {v['vehicle']['modelYear']} {v['vehicle']['make']} {v['vehicle']['model']}")
+            print(f"   General assembly date: {v['vehicle']['actualGeneralAssemblyDate']}")
+            print(f"   OTA early access: {v['vehicle']['otaEarlyAccessStatus']}")
+            print("   Features:")
+            for f in v['vehicle']['vehicleState']['supportedFeatures']:
+                print(f"      {f['name']}: {f['status']}")
 
     if args.user and not args.privacy:
         user = get_user(args.verbose)
@@ -556,15 +668,115 @@ def main():
                 print(f"{i}: {user[i]}")
         print("\n")
 
-    # Not useful right now
-    # get_user_info(args.verbose)
+    if args.state:
+        state = get_vehicle_state(vehicle_id, args.verbose)
+        print("Vehicle State:")
+        print(f"Power State: {state['powerState']['value']}")
+        print(f"Drive Mode: {state['driveMode']['value']}")
+        print(f"Gear Status: {state['gearStatus']['value']}")
+        print(f"Battery Level: {state['batteryLevel']['value']:.1f}%")
+        print(f"Range: {state['distanceToEmpty']['value']} miles")
+        print(f"Battery Limit: {state['batteryLimit']['value']:.1f}%")
+        print(f"Charging state: {state['chargerState']['value']}")
+        print(f"Charger status: {state['chargerStatus']['value']}")
+        print(f"Mileage: {meters_to_miles(state['vehicleMileage']['value']):.1f} miles")
+        print(f"Version: {state['otaCurrentVersion']['value']}")
+        print(f"OTA: {state['otaAvailableVersion']['value']}")
+        print(f"OTA Download progress: {state['otaDownloadProgress']['value']:.1f}%")
+        print(f"OTA Installation Duration: {state['otaInstallDuration']['value']}")
+        print(f"OTA Install progress: {state['otaInstallProgress']['value']:.1f}%")
+        print(f"OTA Install Ready: {state['otaInstallReady']['value']}")
+        print(f"OTA Installation Time: {state['otaInstallTime']['value']}")
+        print(f"OTA Installation Type: {state['otaInstallType']['value']}")
+        print(f"OTA Installation Status: {state['otaStatus']['value']}")
+        print(f"OTA Current Status: {state['otaCurrentStatus']['value']}")
+        print(f"Location: {state['gnssLocation']['latitude']},{state['gnssLocation']['longitude']}")
+        print(f"Location Last Seen: {show_local_time(state['gnssLocation']['timeStamp'])}")
 
-    # Need a vehicleId and for vehicle to be attached to authenticated user to continue these
-    # print("Vehicle state:")
-    # get_vehicle_state("01-27641316", args.verbose)
-    # get_vehicle_state(rivian_info['vehicles'][0]['vin'], args.verbose)
-    # get_vehicle("01-27641316", args.verbose)
-    # get_vehicle(rivian_info['vehicles'][0]['vin'], args.verbose)
+        print(f"Climate Interior Temp: {celsius_to_fahrenheit(state['cabinClimateInteriorTemperature']['value'])}ºF")
+        print(f"Climate Driver Temp: {celsius_to_fahrenheit(state['cabinClimateDriverTemperature']['value'])}ºF")
+        print(f"Cabin Preconditioning Status: {state['cabinPreconditioningStatus']['value']}")
+        print(f"Cabin Preconditioning Type: {state['cabinPreconditioningType']['value']}")
+        print(f"Defrost: {state['defrostDefogStatus']['value']}")
+        print(f"Steering Wheel Heat: {state['steeringWheelHeat']['value']}")
+        print(f"Alarm active: {state['alarmSoundStatus']['value']}")
+        print(f"Pet Mode: {state['petModeStatus']['value']}")
+        print(f"Gear Guard Video: {state['gearGuardVideoStatus']['value']}")
+        print(f"Gear Guard Mode: {state['gearGuardVideoMode']['value']}")
+        print(f"Last Alarm: {show_local_time(state['alarmSoundStatus']['timeStamp'])}")
+        print(f"Time to end of charge: {state['timeToEndOfCharge']['value']}")
+        print(f"Time to end of charge: {state['timeToEndOfCharge']['value']}")
+        print("Doors:")
+        print(f"   Front left locked: {state['doorFrontLeftLocked']['value'] == 'locked'}")
+        print(f"   Front left closed: {state['doorFrontLeftClosed']['value'] == 'closed'}")
+        print(f"   Front right locked: {state['doorFrontRightLocked']['value'] == 'locked'}")
+        print(f"   Front right closed: {state['doorFrontRightClosed']['value'] == 'closed'}")
+        print(f"   Rear left locked: {state['doorRearLeftLocked']['value'] == 'locked'}")
+        print(f"   Rear left closed: {state['doorRearLeftClosed']['value'] == 'closed'}")
+        print(f"   Rear right locked: {state['doorRearRightLocked']['value'] == 'locked'}")
+        print(f"   Rear right closed: {state['doorRearRightClosed']['value'] == 'closed'}")
+        print("Windows:")
+        print(f"   Front left closed: {state['windowFrontLeftClosed']['value'] == 'closed'}")
+        print(f"   Front right closed: {state['windowFrontRightClosed']['value'] == 'closed'}")
+        print(f"   Rear left closed: {state['windowRearLeftClosed']['value'] == 'closed'}")
+        print(f"   Rear right closed: {state['windowRearRightClosed']['value'] == 'closed'}")
+        print("Seats:")
+        print(f"   Front left Heat: {state['seatFrontLeftHeat']['value'] == 'On'}")
+        print(f"   Front right Heat: {state['seatFrontRightHeat']['value'] == 'On'}")
+        print(f"   Rear left Heat: {state['seatRearLeftHeat']['value'] == 'On'}")
+        print(f"   Rear right Heat: {state['seatRearRightHeat']['value'] == 'On'}")
+        print("Frunk:")
+        print(f"   Frunk locked: {state['closureFrunkLocked']['value'] == 'locked'}")
+        print(f"   Frunk closed: {state['closureFrunkClosed']['value'] == 'closed'}")
+        print(f"Gear Guard Locked: {state['gearGuardLocked']['value'] == 'locked'}")
+        print("Lift Gate:")
+        print(f"   Lift Gate Locked: {state['closureLiftgateLocked']['value'] == 'locked'}")
+        print(f"   Lift Gate Closed: {state['closureLiftgateClosed']['value'] == 'closed'}")
+        print("Tonneau:")
+        print(f"   Tonneau Locked: {state['closureTonneauLocked']['value'] == 'locked'}")
+        print(f"   Tonneau Closed: {state['closureTonneauClosed']['value'] == 'closed'}")
+        print(f"Wiper Fluid: {state['wiperFluidState']['value']}")
+        print("Tire pressures:")
+        print(f"   Front Left: {state['tirePressureStatusFrontLeft']['value']}")
+        print(f"   Front Right: {state['tirePressureStatusFrontRight']['value']}")
+        print(f"   Rear Left: {state['tirePressureStatusRearLeft']['value']}")
+        print(f"   Rear Right: {state['tirePressureStatusRearRight']['value']}")
+
+    if args.poll:
+        # Charge State = charging_ready or charging_active
+        # Charger Status = chrgr_sts_not_connected, chrgr_sts_connected_charging, chrgr_sts_connected_no_chrg
+        print("Power,Drive Mode,Gear,Mileage,Battery,Range,Location,Charger Status,Charge State,Battery Limit,Charge End")
+        while True:
+            state = get_vehicle_state(vehicle_id, args.verbose, minimal=True)
+            print(
+                f"{state['powerState']['value']}, "
+                f"{state['driveMode']['value']}, "
+                f"{state['gearStatus']['value']}, "
+                f"{meters_to_miles(state['vehicleMileage']['value']):.1f}, "
+                f"{state['batteryLevel']['value']:.1f}%, "
+                f"{state['distanceToEmpty']['value']}, "
+                f"{state['gnssLocation']['latitude']} / {state['gnssLocation']['longitude']}, "
+                f"{state['chargerStatus']['value']}, "
+                f"{state['chargerState']['value']}, "
+                f"{state['batteryLimit']['value']:.1f}%, "
+                f"{state['timeToEndOfCharge']['value']}"
+            )
+            time.sleep(POLL_FREQUENCY)
+
+    if args.vehicle:
+        vehicle = get_vehicle(vehicle_id, args.verbose)
+        print("Vehicle Users:")
+        for u in vehicle:
+            print(f"{u['firstName']} {u['lastName']}")
+            print(f"   Email: {u['email']}")
+            print(f"   Roles: {u['roles']}")
+            print("   Devices:")
+            for d in u['devices']:
+                print(f"      {d['deviceName']}, Paired: {d['isPaired']}, Enabled: {d['isEnabled']}")
+
+    if args.last_seen:
+        last_seen = get_vehicle_last_seen(vehicle_id, args.verbose)
+        print(f"Vehicle last seen: {show_local_time(last_seen)}")
 
 
 if __name__ == '__main__':
