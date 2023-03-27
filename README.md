@@ -50,6 +50,11 @@ bin/rivian_cli --state
 bin/rivian_cli --poll
 ```
 
+### Trip planning
+```
+bin/rivian_cli --plan_trip 85,225,42.0772,-71.6303,42.1399,-71.5163
+```
+
 ### Other commands
 ```
 bin/rivian_cli --help

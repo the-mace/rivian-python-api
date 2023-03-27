@@ -8,8 +8,14 @@ import pickle
 from dateutil.parser import parse
 from dateutil import tz
 import time
+from datetime import datetime
 
-POLL_FREQUENCY = 10
+# Polling constantly while vehicle is awake keeps it awake, all times in seconds
+POLL_FREQUENCY = 30
+# If not sleeping and nothing changes for this period of time then do a VEHICLE_SLEEP_WAIT
+INACTIVITY_WAIT = 30 * 60
+# How long to stop polling to let car go to sleep
+VEHICLE_SLEEP_WAIT = 30 * 60
 
 PICKLE_FILE = 'rivian_auth.pickle'
 
@@ -25,7 +31,13 @@ def save_state(rivian):
 
 
 def restore_state(rivian):
-    rivian.create_csrf_token()
+    while True:
+        try:
+            rivian.create_csrf_token()
+            break
+        except Exception as e:
+            time.sleep(5)
+
     if os.path.exists(PICKLE_FILE):
         with open(PICKLE_FILE, 'rb') as f:
             obj = pickle.load(f)
@@ -218,8 +230,7 @@ def get_vehicle_state(vehicle_id, verbose, minimal=False):
     try:
         response = rivian.get_vehicle_state(vehicle_id=vehicle_id)
     except Exception as e:
-        _, _, message, _, _ = e.args
-        print(f"{message['errors'][0]['message']}")
+        print(f"{str(e)}")
         return None
     response_json = response.json()
     if verbose:
@@ -232,8 +243,7 @@ def get_vehicle_last_seen(vehicle_id, verbose):
     try:
         response = rivian.get_vehicle_last_connection(vehicle_id=vehicle_id)
     except Exception as e:
-        _, _, message, _, _ = e.args
-        print(f"{message['errors'][0]['message']}")
+        print(f"{str(e)}")
         return None
     response_json = response.json()
     if verbose:
@@ -242,13 +252,33 @@ def get_vehicle_last_seen(vehicle_id, verbose):
     return last_seen
 
 
+def plan_trip(vehicle_id, starting_soc, starting_range_meters, origin_lat, origin_long, dest_lat, dest_long, verbose):
+    rivian = get_rivian_object()
+    try:
+        response = rivian.plan_trip(
+            vehicle_id=vehicle_id,
+            starting_soc=float(starting_soc),
+            starting_range_meters=float(starting_range_meters),
+            origin_lat=float(origin_lat),
+            origin_long=float(origin_long),
+            dest_lat=float(dest_lat),
+            dest_long=float(dest_long),
+        )
+    except Exception as e:
+        print(f"{str(e)}")
+        return None
+    response_json = response.json()
+    if verbose:
+        print(f"plan_trip:\n{response_json}")
+    return response_json
+
+
 def get_ota_info(vehicle_id, verbose):
     rivian = get_rivian_object()
     try:
         response = rivian.get_ota_details(vehicle_id=vehicle_id)
     except Exception as e:
-        _, _, message, _, _ = e.args
-        print(f"{message['errors'][0]['message']}")
+        print(f"{str(e)}")
         return None
     response_json = response.json()
     if verbose:
@@ -412,8 +442,25 @@ def celsius_to_fahrenheit(c):
     return (c * 9/5) + 32
 
 
-def meters_to_miles(m):
-    return m / 1609.0
+def meters_to_miles(m, metric=False):
+    if metric:
+        return m
+    else:
+        return m / 1609.0
+
+
+def miles_to_meters(m, metric=False):
+    if metric:
+        return m
+    else:
+        return m * 1609.0
+
+
+def kilometers_to_miles(m, metric=False):
+    if metric:
+        return m
+    else:
+        return (m * 1000) / 1609.0
 
 
 def main():
@@ -438,6 +485,8 @@ def main():
     parser.add_argument('--user_info', help='Show user information', required=False, action='store_true')
     parser.add_argument('--ota', help='Show user information', required=False, action='store_true')
     parser.add_argument('--poll', help='Poll vehicle state', required=False, action='store_true')
+    parser.add_argument('--metric', help='Use metric vs imperial units', required=False, action='store_true')
+    parser.add_argument('--plan_trip', help='Plan a trip - starting soc, starting range in meters, origin lat,origin long,dest lat,dest long', required=False)
     args = parser.parse_args()
 
     if args.login:
@@ -451,7 +500,13 @@ def main():
 
     vehicle_id = None
 
-    needs_vehicle = args.vehicles or args.vehicle or args.state or args.last_seen or args.ota or args.poll
+    needs_vehicle = args.vehicles or \
+                    args.vehicle or \
+                    args.state or \
+                    args.last_seen or \
+                    args.ota or \
+                    args.poll or \
+                    args.plan_trip
 
     if args.vehicle_orders or needs_vehicle:
         verbose = args.vehicle_orders
@@ -679,7 +734,7 @@ def main():
         print(f"Battery Limit: {state['batteryLimit']['value']:.1f}%")
         print(f"Charging state: {state['chargerState']['value']}")
         print(f"Charger status: {state['chargerStatus']['value']}")
-        print(f"Mileage: {meters_to_miles(state['vehicleMileage']['value']):.1f} miles")
+        print(f"Mileage: {meters_to_miles(state['vehicleMileage']['value'], args.metric):.1f} miles")
         print(f"Version: {state['otaCurrentVersion']['value']}")
         print(f"OTA: {state['otaAvailableVersion']['value']}")
         print(f"OTA Download progress: {state['otaDownloadProgress']['value']:.1f}%")
@@ -743,25 +798,41 @@ def main():
         print(f"   Rear Right: {state['tirePressureStatusRearRight']['value']}")
 
     if args.poll:
+        # Power state = ready, go, sleep, standby,
         # Charge State = charging_ready or charging_active
         # Charger Status = chrgr_sts_not_connected, chrgr_sts_connected_charging, chrgr_sts_connected_no_chrg
-        print("Power,Drive Mode,Gear,Mileage,Battery,Range,Location,Charger Status,Charge State,Battery Limit,Charge End")
+        print("timestamp,Power,Drive Mode,Gear,Mileage,Battery,Range,Latitude,Longitude,Charger Status,Charge State,Battery Limit,Charge End")
+        last_state_change = time.time()
+        last_state = None
         while True:
             state = get_vehicle_state(vehicle_id, args.verbose, minimal=True)
-            print(
-                f"{state['powerState']['value']}, "
-                f"{state['driveMode']['value']}, "
-                f"{state['gearStatus']['value']}, "
-                f"{meters_to_miles(state['vehicleMileage']['value']):.1f}, "
-                f"{state['batteryLevel']['value']:.1f}%, "
-                f"{state['distanceToEmpty']['value']}, "
-                f"{state['gnssLocation']['latitude']} / {state['gnssLocation']['longitude']}, "
-                f"{state['chargerStatus']['value']}, "
-                f"{state['chargerState']['value']}, "
-                f"{state['batteryLimit']['value']:.1f}%, "
+            current_state = \
+                f"{state['powerState']['value']}," \
+                f"{state['driveMode']['value']}," \
+                f"{state['gearStatus']['value']}," \
+                f"{meters_to_miles(state['vehicleMileage']['value'], args.metric):.1f}," \
+                f"{state['batteryLevel']['value']:.1f}%," \
+                f"{kilometers_to_miles(state['distanceToEmpty']['value'], args.metric):.1f}," \
+                f"{state['gnssLocation']['latitude']}," \
+                f"{state['gnssLocation']['longitude']}," \
+                f"{state['chargerStatus']['value']}," \
+                f"{state['chargerState']['value']}," \
+                f"{state['batteryLimit']['value']:.1f}%," \
                 f"{state['timeToEndOfCharge']['value']}"
-            )
-            time.sleep(POLL_FREQUENCY)
+            if current_state != last_state:
+                print(f"{datetime.now().strftime('%m/%d/%Y, %H:%M:%S %p %Z').strip()}," + current_state)
+                last_state_change = datetime.now()
+            last_state = current_state
+            if state['powerState']['value'] == 'sleep':
+                time.sleep(POLL_FREQUENCY)
+            else:
+                delta = (datetime.now() - last_state_change).total_seconds()
+                if delta >= INACTIVITY_WAIT:
+                    print(f"Sleeping for {VEHICLE_SLEEP_WAIT} seconds")
+                    time.sleep(VEHICLE_SLEEP_WAIT)
+                    print(f"Back to polling every {POLL_FREQUENCY} seconds, showing changes only")
+                else:
+                    time.sleep(POLL_FREQUENCY)
 
     if args.vehicle:
         vehicle = get_vehicle(vehicle_id, args.verbose)
@@ -777,6 +848,21 @@ def main():
     if args.last_seen:
         last_seen = get_vehicle_last_seen(vehicle_id, args.verbose)
         print(f"Vehicle last seen: {show_local_time(last_seen)}")
+
+    if args.plan_trip:
+        starting_soc, starting_range, origin_lat, origin_long, dest_lat, dest_long = args.plan_trip.split(',')
+        starting_range_meters = miles_to_meters(float(starting_range), args.metric)
+        planned_trip = plan_trip(
+            vehicle_id,
+            starting_soc,
+            starting_range_meters,
+            origin_lat,
+            origin_long,
+            dest_lat,
+            dest_long,
+            args.verbose
+        )
+        print(planned_trip)
 
 
 if __name__ == '__main__':

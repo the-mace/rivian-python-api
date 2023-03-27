@@ -114,6 +114,8 @@ class Rivian:
 
     def raw_graphql_query(self, url, query, headers):
         response = requests.post(url, json=query, headers=headers)
+        if response.status_code != 200:
+            log.warning(f"Graphql error: Response status: {response.status_code} Reason: {response.reason}")
         return response
 
     def gateway_headers(self):
@@ -379,6 +381,29 @@ class Rivian:
             "query": "query GetVehicleLastConnection($vehicleID: String!) { vehicleState(id: $vehicleID) { __typename cloudConnection { __typename lastSync } } }",
             "variables": {
                 'vehicleID': vehicle_id,
+            },
+        }
+        response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
+        return response
+
+    def plan_trip(self, vehicle_id, starting_soc, starting_range_meters, origin_lat, origin_long, dest_lat, dest_long):
+        headers = self.gateway_headers()
+        query = {
+            "operationName": "planTrip",
+            "query": "query planTrip($origin: CoordinatesInput!, $destination: CoordinatesInput!, $bearing: Float!, $vehicleId: String!, $startingSoc: Float!, $startingRangeMeters: Float!) { planTrip(bearing: $bearing, vehicleId: $vehicleId, startingSoc: $startingSoc, origin: $origin, destination: $destination, startingRangeMeters: $startingRangeMeters) { routes { routeResponse destinationReached totalChargingDuration arrivalSOC arrivalReachableDistance waypoints { waypointType entityId name latitude longitude maxPower chargeDuration arrivalSOC arrivalReachableDistance departureSOC departureReachableDistance } energyConsumptionOnLeg batteryEmptyToDestinationDistance batteryEmptyLocationLatitude batteryEmptyLocationLongitude } tripPlanStatus chargeStationsAvailable socBelowLimit } }",
+            "variables": {
+                'origin': {
+                    'latitude': origin_lat,
+                    'longitude': origin_long,
+                },
+                'destination': {
+                    'latitude': dest_lat,
+                    'longitude': dest_long,
+                },
+                'bearing': 0,
+                'vehicleId': vehicle_id,
+                'startingRangeMeters': starting_range_meters,
+                'startingSoc': starting_soc,
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
