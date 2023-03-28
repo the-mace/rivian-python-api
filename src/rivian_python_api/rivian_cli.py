@@ -217,6 +217,7 @@ def get_vehicle(vehicle_id, verbose):
         }
         for d in u['devices']:
             ud['devices'].append({
+                "id": d["id"],
                 "deviceName": d["deviceName"],
                 "isPaired": d["isPaired"],
                 "isEnabled": d["isEnabled"],
@@ -416,6 +417,35 @@ def get_user(verbose):
     return user
 
 
+def vehicle_command(command, vehicle_id=None, verbose=False):
+    vehiclePublicKey = None
+    user_info = user_information(verbose)
+    for v in user_info['vehicles']:
+        if vehicle_id and v['id'] == vehicle_id:
+            found = True
+        else:
+            vehicle_id = v['id']
+            found = True
+        if found:
+            vehiclePublicKey = v['vas']['vehiclePublicKey']
+            break
+        # Only need first
+    vasPhoneId = user_info['enrolledPhones'][0]['vas']['vasPhoneId']
+    deviceName = user_info['enrolledPhones'][0]['enrolled'][0]['deviceName']
+
+    vehicle = get_vehicle(vehicle_id=vehicle_id, verbose=verbose)
+    deviceId = None
+    for u in vehicle:
+        for d in u['devices']:
+            if d['deviceName'] == deviceName:
+                deviceId = d['id']
+                break
+        if deviceId:
+            break
+
+    print(f"Vehicle ID: {vehicle_id} vasPhoneID: {vasPhoneId} vehiclePublicKey: {vehiclePublicKey} deviceId: {deviceId}")
+
+
 def test_graphql(verbose):
     rivian = get_rivian_object()
     query = {
@@ -432,7 +462,10 @@ def test_graphql(verbose):
 
 
 def show_local_time(ts):
-    t = parse(ts)
+    if type(ts) is str:
+        t = parse(ts)
+    else:
+        t = ts
     to_zone = tz.tzlocal()
     t = t.astimezone(to_zone)
     return t.strftime("%m/%d/%Y, %H:%M%p %Z")
@@ -487,6 +520,21 @@ def main():
     parser.add_argument('--poll', help='Poll vehicle state', required=False, action='store_true')
     parser.add_argument('--metric', help='Use metric vs imperial units', required=False, action='store_true')
     parser.add_argument('--plan_trip', help='Plan a trip - starting soc, starting range in meters, origin lat,origin long,dest lat,dest long', required=False)
+    parser.add_argument('--command', help='Send vehicle a command', required=False,
+                        choices=['WAKE_VEHICLE',
+                                 'OPEN_FRUNK',
+                                 'CLOSE_FRUNK',
+                                 'OPEN_ALL_WINDOWS',
+                                 'CLOSE_ALL_WINDOWS',
+                                 'UNLOCK_ALL_CLOSURES',
+                                 'LOCK_ALL_CLOSURES',
+                                 'ENABLE_GEAR_GUARD_VIDEO',
+                                 'DISABLE_GEAR_GUARD_VIDEO',
+                                 'HONK_AND_FLASH_LIGHTS',
+                                 'OPEN_TONNEAU_COVER',
+                                 'CLOSE_TONNEAU_COVER',
+                                 ]
+                        )
     args = parser.parse_args()
 
     if args.login:
@@ -506,10 +554,11 @@ def main():
                     args.last_seen or \
                     args.ota or \
                     args.poll or \
-                    args.plan_trip
+                    args.plan_trip or \
+                    args.user_info
 
-    if args.vehicle_orders or needs_vehicle:
-        verbose = args.vehicle_orders
+    if args.vehicle_orders or (needs_vehicle and not args.vehicle_id):
+        verbose = args.vehicle_orders and args.verbose
         rivian_info['vehicle_orders'] = vehicle_orders(verbose)
 
     if args.vehicle_orders:
@@ -574,9 +623,9 @@ def main():
         else:
             print("No Retail Orders found")
 
-    if args.vehicles or needs_vehicle:
+    if args.vehicles or (needs_vehicle and not args.vehicle_id):
         found_vehicle = False
-        verbose = args.vehicles
+        verbose = args.vehicles and args.verbose
         for order in rivian_info['vehicle_orders']:
             details = order_details(order['id'], verbose)
             vehicle = {}
@@ -701,6 +750,14 @@ def main():
             print("   Features:")
             for f in v['vehicle']['vehicleState']['supportedFeatures']:
                 print(f"      {f['name']}: {f['status']}")
+        for p in user_info['enrolledPhones']:
+            print("Enrolled phones:")
+            for d in p['enrolled']:
+                if d['vehicleId'] == vehicle_id:
+                    print(f"   Device Name: {d['deviceName']}")
+                    print(f"   Device identityId: {d['identityId']}")
+            print(f"   vasPhoneId: {p['vas']['vasPhoneId']}")
+            print(f"   publicKey: {p['vas']['publicKey']}")
 
     if args.user and not args.privacy:
         user = get_user(args.verbose)
@@ -804,6 +861,7 @@ def main():
         print("timestamp,Power,Drive Mode,Gear,Mileage,Battery,Range,Latitude,Longitude,Charger Status,Charge State,Battery Limit,Charge End")
         last_state_change = time.time()
         last_state = None
+        long_sleep_completed = False
         while True:
             state = get_vehicle_state(vehicle_id, args.verbose, minimal=True)
             current_state = \
@@ -827,10 +885,11 @@ def main():
                 time.sleep(POLL_FREQUENCY)
             else:
                 delta = (datetime.now() - last_state_change).total_seconds()
-                if delta >= INACTIVITY_WAIT:
+                if not long_sleep_completed and delta >= INACTIVITY_WAIT:
                     print(f"Sleeping for {VEHICLE_SLEEP_WAIT} seconds")
                     time.sleep(VEHICLE_SLEEP_WAIT)
                     print(f"Back to polling every {POLL_FREQUENCY} seconds, showing changes only")
+                    long_sleep_completed = True
                 else:
                     time.sleep(POLL_FREQUENCY)
 
@@ -843,7 +902,7 @@ def main():
             print(f"   Roles: {u['roles']}")
             print("   Devices:")
             for d in u['devices']:
-                print(f"      {d['deviceName']}, Paired: {d['isPaired']}, Enabled: {d['isEnabled']}")
+                print(f"      {d['deviceName']}, Paired: {d['isPaired']}, Enabled: {d['isEnabled']}, ID: {d['id']}")
 
     if args.last_seen:
         last_seen = get_vehicle_last_seen(vehicle_id, args.verbose)
@@ -863,6 +922,9 @@ def main():
             args.verbose
         )
         print(planned_trip)
+
+    if args.command:
+        vehicle_command(args.command, args.vehicle_id, args.verbose)
 
 
 if __name__ == '__main__':

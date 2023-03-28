@@ -1,6 +1,7 @@
 import logging
 import requests
 import uuid
+import time
 
 RIVIAN_BASE_PATH = "https://rivian.com/api/gql"
 RIVIAN_GATEWAY_PATH = RIVIAN_BASE_PATH + "/gateway/graphql"
@@ -507,4 +508,29 @@ class Rivian:
             "variables": {},
         }
         response = self.raw_graphql_query(url=RIVIAN_ORDERS_PATH, query=query, headers=headers)
+        return response
+
+    # Vehicle commands require an HMAC signature to be sent with the request.
+    # The HMAC is generated using the command name and the current timestamp,
+    # using a shared key generated from the phone’s private key and the vehicle’s
+    # public key. The vehicle’s public key is available in the vehiclePublicKey
+    # field of the getUserInfo endpoint.
+    def send_vehicle_command(self, vehicle_id, command, vasPhoneId, deviceId, vehiclePublicKey):
+        headers = self.gateway_headers()
+
+        query = {
+            "operationName": "sendVehicleCommand",
+            "query": "mutation sendVehicleCommand($attrs: VehicleCommandAttributes!) { sendVehicleCommand(attrs: $attrs) { __typename id command state } }",
+            "variables": {
+                "attrs": {
+                    "command": command,
+                    "hmac": 0, #your-hmac
+                    "timestamp": time.time(),
+                    "vasPhoneId": vasPhoneId,
+                    "deviceId": deviceId,
+                    "vehicleId": vehicle_id,
+                }
+            },
+        }
+        response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
         return response
