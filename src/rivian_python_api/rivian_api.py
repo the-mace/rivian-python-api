@@ -332,7 +332,7 @@ class Rivian:
                     "otaAvailableVersionWeek { __typename timeStamp value } " \
                     "otaAvailableVersionYear { __typename timeStamp value } " \
                     "otaCurrentVersion { __typename timeStamp value } " \
-                    " otaCurrentVersionNumber { __typename timeStamp value } " \
+                    "otaCurrentVersionNumber { __typename timeStamp value } " \
                     "otaCurrentVersionWeek { __typename timeStamp value } " \
                     "otaCurrentVersionYear { __typename timeStamp value } " \
                     "otaDownloadProgress { __typename timeStamp value } " \

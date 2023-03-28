@@ -13,9 +13,11 @@ from datetime import datetime
 # Polling constantly while vehicle is awake keeps it awake, all times in seconds
 POLL_FREQUENCY = 30
 # If not sleeping and nothing changes for this period of time then do a VEHICLE_SLEEP_WAIT
-INACTIVITY_WAIT = 30 * 60
+# Set to 0 for continual polling at POLL_FREQUENCY
+INACTIVITY_WAIT = 0
+# INACTIVITY_WAIT = 30 * 60
 # How long to stop polling to let car go to sleep
-VEHICLE_SLEEP_WAIT = 30 * 60
+VEHICLE_SLEEP_WAIT = 40 * 60
 
 PICKLE_FILE = 'rivian_auth.pickle'
 
@@ -233,7 +235,11 @@ def get_vehicle_state(vehicle_id, verbose, minimal=False):
     except Exception as e:
         print(f"{str(e)}")
         return None
-    response_json = response.json()
+    try:
+        response_json = response.json()
+    except Exception as e:
+        log.warning(f"Error getting vehicle state: {str(e)}")
+        return None
     if verbose:
         print(f"get_vehicle_state:\n{response_json}")
     return response_json['data']['vehicleState']
@@ -713,8 +719,8 @@ def main():
         ota = get_ota_info(vehicle_id, args.verbose)
         if len(ota):
             if ota['availableOTAUpdateDetails']:
-                print(f"Available OTA Version: {ota['currentOTAUpdateDetails']['version']}")
-                print(f"Available OTA Release notes: {ota['currentOTAUpdateDetails']['url']}")
+                print(f"Available OTA Version: {ota['availableOTAUpdateDetails']['version']}")
+                print(f"Available OTA Release notes: {ota['availableOTAUpdateDetails']['url']}")
             if ota['currentOTAUpdateDetails']:
                 print(f"Current Version: {ota['currentOTAUpdateDetails']['version']}")
                 print(f"Current Version Release notes: {ota['currentOTAUpdateDetails']['url']}")
@@ -786,38 +792,45 @@ def main():
         print(f"Power State: {state['powerState']['value']}")
         print(f"Drive Mode: {state['driveMode']['value']}")
         print(f"Gear Status: {state['gearStatus']['value']}")
-        print(f"Battery Level: {state['batteryLevel']['value']:.1f}%")
-        print(f"Range: {state['distanceToEmpty']['value']} miles")
-        print(f"Battery Limit: {state['batteryLimit']['value']:.1f}%")
-        print(f"Charging state: {state['chargerState']['value']}")
-        print(f"Charger status: {state['chargerStatus']['value']}")
         print(f"Mileage: {meters_to_miles(state['vehicleMileage']['value'], args.metric):.1f} miles")
-        print(f"Version: {state['otaCurrentVersion']['value']}")
-        print(f"OTA: {state['otaAvailableVersion']['value']}")
-        print(f"OTA Download progress: {state['otaDownloadProgress']['value']:.1f}%")
-        print(f"OTA Installation Duration: {state['otaInstallDuration']['value']}")
-        print(f"OTA Install progress: {state['otaInstallProgress']['value']:.1f}%")
-        print(f"OTA Install Ready: {state['otaInstallReady']['value']}")
-        print(f"OTA Installation Time: {state['otaInstallTime']['value']}")
-        print(f"OTA Installation Type: {state['otaInstallType']['value']}")
-        print(f"OTA Installation Status: {state['otaStatus']['value']}")
-        print(f"OTA Current Status: {state['otaCurrentStatus']['value']}")
         print(f"Location: {state['gnssLocation']['latitude']},{state['gnssLocation']['longitude']}")
-        print(f"Location Last Seen: {show_local_time(state['gnssLocation']['timeStamp'])}")
 
-        print(f"Climate Interior Temp: {celsius_to_fahrenheit(state['cabinClimateInteriorTemperature']['value'])}ºF")
-        print(f"Climate Driver Temp: {celsius_to_fahrenheit(state['cabinClimateDriverTemperature']['value'])}ºF")
-        print(f"Cabin Preconditioning Status: {state['cabinPreconditioningStatus']['value']}")
-        print(f"Cabin Preconditioning Type: {state['cabinPreconditioningType']['value']}")
-        print(f"Defrost: {state['defrostDefogStatus']['value']}")
-        print(f"Steering Wheel Heat: {state['steeringWheelHeat']['value']}")
-        print(f"Alarm active: {state['alarmSoundStatus']['value']}")
-        print(f"Pet Mode: {state['petModeStatus']['value']}")
-        print(f"Gear Guard Video: {state['gearGuardVideoStatus']['value']}")
-        print(f"Gear Guard Mode: {state['gearGuardVideoMode']['value']}")
-        print(f"Last Alarm: {show_local_time(state['alarmSoundStatus']['timeStamp'])}")
-        print(f"Time to end of charge: {state['timeToEndOfCharge']['value']}")
-        print(f"Time to end of charge: {state['timeToEndOfCharge']['value']}")
+        print("Battery:")
+        print(f"   Battery Level: {state['batteryLevel']['value']:.1f}%")
+        print(f"   Range: {state['distanceToEmpty']['value']} miles")
+        print(f"   Battery Limit: {state['batteryLimit']['value']:.1f}%")
+        print(f"   Charging state: {state['chargerState']['value']}")
+        print(f"   Charger status: {state['chargerStatus']['value']}")
+        print(f"   Time to end of charge: {state['timeToEndOfCharge']['value']}")
+
+        print("OTA:")
+        print(f"   Current Version: {state['otaCurrentVersion']['value']}")
+        print(f"   Available version: {state['otaAvailableVersion']['value']}")
+        print(f"   Status: {state['otaStatus']['value']}")
+        print(f"   Install type: {state['otaInstallType']['value']}")
+        print(f"   Duration: {state['otaInstallDuration']['value']}")
+        print(f"   Download progress: {state['otaDownloadProgress']['value']}")
+        print(f"   Install ready: {state['otaInstallReady']['value']}")
+        print(f"   Install progress: {state['otaInstallProgress']['value']}")
+        print(f"   Install time: {state['otaInstallTime']['value']}")
+        print(f"   Current Status: {state['otaCurrentStatus']['value']}")
+
+        print("Climate:")
+        print(f"   Climate Interior Temp: {celsius_to_fahrenheit(state['cabinClimateInteriorTemperature']['value'])}ºF")
+        print(f"   Climate Driver Temp: {celsius_to_fahrenheit(state['cabinClimateDriverTemperature']['value'])}ºF")
+        print(f"   Cabin Preconditioning Status: {state['cabinPreconditioningStatus']['value']}")
+        print(f"   Cabin Preconditioning Type: {state['cabinPreconditioningType']['value']}")
+        print(f"   Defrost: {state['defrostDefogStatus']['value']}")
+        print(f"   Steering Wheel Heat: {state['steeringWheelHeat']['value']}")
+        print(f"   Pet Mode: {state['petModeStatus']['value']}")
+
+        print("Security:")
+        print(f"   Alarm active: {state['alarmSoundStatus']['value']}")
+        print(f"   Gear Guard Video: {state['gearGuardVideoStatus']['value']}")
+        print(f"   Gear Guard Mode: {state['gearGuardVideoMode']['value']}")
+        print(f"   Last Alarm: {show_local_time(state['alarmSoundStatus']['timeStamp'])}")
+        print(f"   Gear Guard Locked: {state['gearGuardLocked']['value'] == 'locked'}")
+
         print("Doors:")
         print(f"   Front left locked: {state['doorFrontLeftLocked']['value'] == 'locked'}")
         print(f"   Front left closed: {state['doorFrontLeftClosed']['value'] == 'closed'}")
@@ -827,43 +840,64 @@ def main():
         print(f"   Rear left closed: {state['doorRearLeftClosed']['value'] == 'closed'}")
         print(f"   Rear right locked: {state['doorRearRightLocked']['value'] == 'locked'}")
         print(f"   Rear right closed: {state['doorRearRightClosed']['value'] == 'closed'}")
+
         print("Windows:")
         print(f"   Front left closed: {state['windowFrontLeftClosed']['value'] == 'closed'}")
         print(f"   Front right closed: {state['windowFrontRightClosed']['value'] == 'closed'}")
         print(f"   Rear left closed: {state['windowRearLeftClosed']['value'] == 'closed'}")
         print(f"   Rear right closed: {state['windowRearRightClosed']['value'] == 'closed'}")
+
         print("Seats:")
         print(f"   Front left Heat: {state['seatFrontLeftHeat']['value'] == 'On'}")
         print(f"   Front right Heat: {state['seatFrontRightHeat']['value'] == 'On'}")
         print(f"   Rear left Heat: {state['seatRearLeftHeat']['value'] == 'On'}")
         print(f"   Rear right Heat: {state['seatRearRightHeat']['value'] == 'On'}")
-        print("Frunk:")
-        print(f"   Frunk locked: {state['closureFrunkLocked']['value'] == 'locked'}")
-        print(f"   Frunk closed: {state['closureFrunkClosed']['value'] == 'closed'}")
-        print(f"Gear Guard Locked: {state['gearGuardLocked']['value'] == 'locked'}")
-        print("Lift Gate:")
-        print(f"   Lift Gate Locked: {state['closureLiftgateLocked']['value'] == 'locked'}")
-        print(f"   Lift Gate Closed: {state['closureLiftgateClosed']['value'] == 'closed'}")
-        print("Tonneau:")
-        print(f"   Tonneau Locked: {state['closureTonneauLocked']['value'] == 'locked'}")
-        print(f"   Tonneau Closed: {state['closureTonneauClosed']['value'] == 'closed'}")
-        print(f"Wiper Fluid: {state['wiperFluidState']['value']}")
-        print("Tire pressures:")
-        print(f"   Front Left: {state['tirePressureStatusFrontLeft']['value']}")
-        print(f"   Front Right: {state['tirePressureStatusFrontRight']['value']}")
-        print(f"   Rear Left: {state['tirePressureStatusRearLeft']['value']}")
-        print(f"   Rear Right: {state['tirePressureStatusRearRight']['value']}")
+
+        print("Storage:")
+        print("   Frunk:")
+        print(f"      Frunk locked: {state['closureFrunkLocked']['value'] == 'locked'}")
+        print(f"      Frunk closed: {state['closureFrunkClosed']['value'] == 'closed'}")
+
+        print("   Lift Gate:")
+        print(f"      Lift Gate Locked: {state['closureLiftgateLocked']['value'] == 'locked'}")
+        print(f"      Lift Gate Closed: {state['closureLiftgateClosed']['value']}")
+
+        print("   Tonneau:")
+        print(f"      Tonneau Locked: {state['closureTonneauLocked']['value']}")
+        print(f"      Tonneau Closed: {state['closureTonneauClosed']['value']}")
+
+        print("Maintenance:")
+        print(f"   Wiper Fluid: {state['wiperFluidState']['value']}")
+        print("   Tire pressures:")
+        print(f"      Front Left: {state['tirePressureStatusFrontLeft']['value']}")
+        print(f"      Front Right: {state['tirePressureStatusFrontRight']['value']}")
+        print(f"      Rear Left: {state['tirePressureStatusRearLeft']['value']}")
+        print(f"      Rear Right: {state['tirePressureStatusRearRight']['value']}")
 
     if args.poll:
         # Power state = ready, go, sleep, standby,
         # Charge State = charging_ready or charging_active
         # Charger Status = chrgr_sts_not_connected, chrgr_sts_connected_charging, chrgr_sts_connected_no_chrg
+        print(f"Polling car every {POLL_FREQUENCY} seconds, only showing changes in data.")
+        if INACTIVITY_WAIT:
+            print(f"If 'ready' and inactive for {INACTIVITY_WAIT / 60:.0f} minutes will pause polling once for "
+                  f"every ready state cycle for {VEHICLE_SLEEP_WAIT / 60:.0f} minutes to allow car to go to sleep.")
+        print("")
+
         print("timestamp,Power,Drive Mode,Gear,Mileage,Battery,Range,Latitude,Longitude,Charger Status,Charge State,Battery Limit,Charge End")
         last_state_change = time.time()
         last_state = None
+        last_power_state = None
         long_sleep_completed = False
         while True:
             state = get_vehicle_state(vehicle_id, args.verbose, minimal=True)
+            if not state:
+                time.sleep(5)
+                continue
+            if last_power_state != 'ready' and state['powerState']['value'] == 'ready':
+                # Allow one long sleep per ready state cycle to allow car to sleep
+                long_sleep_completed = False
+            last_power_state = state['powerState']['value']
             current_state = \
                 f"{state['powerState']['value']}," \
                 f"{state['driveMode']['value']}," \
@@ -885,10 +919,12 @@ def main():
                 time.sleep(POLL_FREQUENCY)
             else:
                 delta = (datetime.now() - last_state_change).total_seconds()
-                if not long_sleep_completed and delta >= INACTIVITY_WAIT:
-                    print(f"Sleeping for {VEHICLE_SLEEP_WAIT} seconds")
+                if INACTIVITY_WAIT and not long_sleep_completed and delta >= INACTIVITY_WAIT:
+                    print(f"{datetime.now().strftime('%m/%d/%Y, %H:%M:%S %p %Z').strip()} "
+                          f"Sleeping for {VEHICLE_SLEEP_WAIT / 60:.0f} minutes")
                     time.sleep(VEHICLE_SLEEP_WAIT)
-                    print(f"Back to polling every {POLL_FREQUENCY} seconds, showing changes only")
+                    print(f"{datetime.now().strftime('%m/%d/%Y, %H:%M:%S %p %Z').strip()} "
+                          f"Back to polling every {POLL_FREQUENCY} seconds, showing changes only")
                     long_sleep_completed = True
                 else:
                     time.sleep(POLL_FREQUENCY)
