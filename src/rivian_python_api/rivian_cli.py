@@ -910,7 +910,7 @@ def main():
                 f"{state['chargerStatus']['value']}," \
                 f"{state['chargerState']['value']}," \
                 f"{state['batteryLimit']['value']:.1f}%," \
-                f"{state['timeToEndOfCharge']['value']}"
+                f"{state['timeToEndOfCharge']['value'] // 60}h{state['timeToEndOfCharge']['value'] % 60}m"
             if current_state != last_state:
                 print(f"{datetime.now().strftime('%m/%d/%Y, %H:%M:%S %p %Z').strip()}," + current_state)
                 last_state_change = datetime.now()
