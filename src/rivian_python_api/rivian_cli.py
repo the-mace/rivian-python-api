@@ -10,7 +10,6 @@ from dateutil.parser import parse
 from dateutil import tz
 import time
 from datetime import datetime
-from haversine import haversine
 
 # Polling constantly while vehicle is awake keeps it awake, all times in seconds
 POLL_FREQUENCY = 30
@@ -356,21 +355,6 @@ def images(verbose):
     return images
 
 
-def get_user_info(verbose):
-    rivian = get_rivian_object()
-    response_json = rivian.get_user_info()
-    if verbose:
-        print(f"get_user_info:\n{response_json}")
-    vehicles = []
-    for vehicle in response_json['data']['currentUser']['vehicles']:
-        vehicles.append({
-            'id': vehicle['id'],
-            'vin': vehicle['vin'],
-            'model': vehicle['vehicle']['model'],
-        })
-    return vehicles
-
-
 def get_user(verbose):
     rivian = get_rivian_object()
     response_json = rivian.user()
@@ -458,9 +442,9 @@ def celsius_to_fahrenheit(c):
     return (c * 9/5) + 32
 
 
-def meters_to_miles(m, metric=False):
+def meters_to_distance_units(m, metric=False):
     if metric:
-        return m
+        return m / 1000
     else:
         return m / 1609.0
 
@@ -786,7 +770,7 @@ def main():
         print(f"Power State: {state['powerState']['value']}")
         print(f"Drive Mode: {state['driveMode']['value']}")
         print(f"Gear Status: {state['gearStatus']['value']}")
-        print(f"Mileage: {meters_to_miles(state['vehicleMileage']['value'], args.metric):.1f} miles")
+        print(f"Mileage: {meters_to_distance_units(state['vehicleMileage']['value'], args.metric):.1f} {distance_units_string}")
         print(f"Location: {state['gnssLocation']['latitude']},{state['gnssLocation']['longitude']}")
 
         print("Battery:")
@@ -885,9 +869,9 @@ def main():
         last_state = None
         last_power_state = None
         long_sleep_completed = False
-        last_lat = None
-        last_long = None
-        last_lat_long_time = None
+        last_mileage = None
+        distance_time = None
+        elapsed_time = None
         speed = 0
         while True:
             state = get_vehicle_state(vehicle_id, args.verbose, minimal=True)
@@ -898,23 +882,19 @@ def main():
                 # Allow one long sleep per ready state cycle to allow car to sleep
                 long_sleep_completed = False
             last_power_state = state['powerState']['value']
-            if last_lat and last_long and last_lat_long_time:
-                distance = haversine(
-                    (last_lat, last_long),
-                    (float(state['gnssLocation']['latitude']),
-                     float(state['gnssLocation']['longitude'])),
-                    unit=distance_units
-                )
-                elapsed_time = (datetime.now() - last_lat_long_time).total_seconds()
+            if distance_time:
+                elapsed_time = (datetime.now() - distance_time).total_seconds()
+            if last_mileage and elapsed_time:
+                distance_meters = state['vehicleMileage']['value'] - last_mileage
+                distance = meters_to_distance_units(distance_meters, args.metric)
                 speed = distance * (60 * 60 / elapsed_time)
-            last_lat = float(state['gnssLocation']['latitude'])
-            last_long = float(state['gnssLocation']['longitude'])
-            last_lat_long_time = datetime.now()
+            last_mileage = state['vehicleMileage']['value']
+            distance_time = datetime.now()
             current_state = \
                 f"{state['powerState']['value']}," \
                 f"{state['driveMode']['value']}," \
                 f"{state['gearStatus']['value']}," \
-                f"{meters_to_miles(state['vehicleMileage']['value'], args.metric):.1f}," \
+                f"{meters_to_distance_units(state['vehicleMileage']['value'], args.metric):.1f}," \
                 f"{state['batteryLevel']['value']:.1f}%," \
                 f"{kilometers_to_miles(state['distanceToEmpty']['value'], args.metric):.1f}," \
                 f"{speed:.1f} {distance_units_string}," \
