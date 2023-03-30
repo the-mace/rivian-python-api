@@ -33,16 +33,21 @@ Note you can definitely argue that their approach is more secure than that of ot
 it also limits the ability to extend the owners experience through third party products.
 
 ### Missing & Unknown
-1. There does not appear to be an API call that returns `speed` for the vehicle. With GPS location and polling and math you can figure it out.
+1. There does not appear to be an API call that returns `speed` for the vehicle. With GPS location and polling and math you can figure it out with haversine etc. type approaches. Example in the CLI
 2. For the `planTrip` API, the map format (`routeResponse`) is not yet understood.
 
 ## Dependencies
 
 Python 3
+pip
 
 ## Setup
 
-None required
+### For API
+None
+
+### For CLI
+`pip install -r requirements.txt`
 
 *Note: For any actions with the CLI you'll need to login, see login information below.*
 

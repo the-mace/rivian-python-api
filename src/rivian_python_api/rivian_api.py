@@ -150,7 +150,7 @@ class Rivian:
             "variables": {},
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def delivery(self, order_id):
         headers = self.gateway_headers()
@@ -162,7 +162,7 @@ class Rivian:
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def transaction_status(self, order_id):
         headers = self.transaction_headers()
@@ -174,7 +174,7 @@ class Rivian:
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_TRANSACTIONS_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def finance_summary(self, order_id):
         headers = self.transaction_headers()
@@ -184,7 +184,7 @@ class Rivian:
             "variables": {"orderId": order_id},
         }
         response = self.raw_graphql_query(url=RIVIAN_TRANSACTIONS_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def order(self, order_id):
         headers = self.transaction_headers()
@@ -194,7 +194,7 @@ class Rivian:
             "variables": {"id": order_id},
         }
         response = self.raw_graphql_query(url=RIVIAN_ORDERS_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def retail_orders(self):
         headers = self.transaction_headers()
@@ -217,7 +217,7 @@ class Rivian:
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_ORDERS_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def get_order(self, order_id):
         headers = self.transaction_headers()
@@ -229,7 +229,7 @@ class Rivian:
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_ORDERS_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def payment_methods(self):
         headers = self.transaction_headers()
@@ -239,7 +239,7 @@ class Rivian:
             "variables": {},
         }
         response = self.raw_graphql_query(url=RIVIAN_ORDERS_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def get_user_information(self):
         headers = self.gateway_headers()
@@ -250,7 +250,7 @@ class Rivian:
             "variables": None,
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def get_vehicle_state(self, vehicle_id, minimal=False):
         headers = self.gateway_headers()
@@ -373,7 +373,7 @@ class Rivian:
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def get_vehicle_last_connection(self, vehicle_id):
         headers = self.gateway_headers()
@@ -385,7 +385,7 @@ class Rivian:
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def plan_trip(self, vehicle_id, starting_soc, starting_range_meters, origin_lat, origin_long, dest_lat, dest_long):
         headers = self.gateway_headers()
@@ -408,7 +408,7 @@ class Rivian:
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def get_ota_details(self, vehicle_id):
         headers = self.gateway_headers()
@@ -420,7 +420,7 @@ class Rivian:
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def check_by_rivian_id(self):
         headers = self.transaction_headers()
@@ -430,7 +430,7 @@ class Rivian:
             "variables": {},
         }
         response = self.raw_graphql_query(url=RIVIAN_CHARGING_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def get_linked_email_for_rivian_id(self):
         headers = self.transaction_headers()
@@ -440,7 +440,7 @@ class Rivian:
             "variables": {},
         }
         response = self.raw_graphql_query(url=RIVIAN_CHARGING_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def get_parameter_store_values(self):
         headers = self.transaction_headers()
@@ -452,7 +452,7 @@ class Rivian:
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_ORDERS_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def get_vehicle(self, vehicle_id):
         headers = self.gateway_headers()
@@ -464,7 +464,7 @@ class Rivian:
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def get_registered_wallboxes(self):
         headers = self.gateway_headers()
@@ -474,7 +474,7 @@ class Rivian:
             "query": "query getRegisteredWallboxes { getRegisteredWallboxes { __typename wallboxId userId wifiId name linked latitude longitude chargingStatus power currentVoltage currentAmps softwareVersion model serialNumber maxPower maxVoltage maxAmps } }"
         }
         response = self.raw_graphql_query(url=RIVIAN_CHARGING_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def get_provisioned_camp_speakers(self):
         headers = self.gateway_headers()
@@ -484,7 +484,7 @@ class Rivian:
             "variables": {},
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def get_vehicle_images(self):
         headers = self.gateway_headers()
@@ -497,7 +497,7 @@ class Rivian:
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     def user(self):
         headers = self.gateway_headers()
@@ -508,7 +508,7 @@ class Rivian:
             "variables": {},
         }
         response = self.raw_graphql_query(url=RIVIAN_ORDERS_PATH, query=query, headers=headers)
-        return response
+        return response.json()
 
     # Vehicle commands require an HMAC signature to be sent with the request.
     # The HMAC is generated using the command name and the current timestamp,
@@ -533,4 +533,4 @@ class Rivian:
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
-        return response
+        return response.json()

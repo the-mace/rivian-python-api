@@ -2,6 +2,7 @@
 # encoding: utf-8
 
 import os
+import sys
 import argparse
 from rivian_api import *
 import pickle
@@ -9,6 +10,7 @@ from dateutil.parser import parse
 from dateutil import tz
 import time
 from datetime import datetime
+from haversine import haversine
 
 # Polling constantly while vehicle is awake keeps it awake, all times in seconds
 POLL_FREQUENCY = 30
@@ -79,8 +81,7 @@ def login(verbose):
 
 def user_information(verbose):
     rivian = get_rivian_object()
-    response = rivian.get_user_information()
-    response_json = response.json()
+    response_json = rivian.get_user_information()
     if verbose:
         print(f"user_information:\n{response_json}")
     return response_json['data']['currentUser']
@@ -88,8 +89,7 @@ def user_information(verbose):
 
 def vehicle_orders(verbose):
     rivian = get_rivian_object()
-    response = rivian.vehicle_orders()
-    response_json = response.json()
+    response_json = rivian.vehicle_orders()
     if verbose:
         print(f"orders:\n{response_json}")
     orders = []
@@ -108,8 +108,7 @@ def vehicle_orders(verbose):
 
 def order_details(order_id, verbose):
     rivian = get_rivian_object()
-    response = rivian.order(order_id=order_id)
-    response_json = response.json()
+    response_json = rivian.order(order_id=order_id)
     if verbose:
         print(f"order_details:\n{response_json}")
     data = {
@@ -127,8 +126,7 @@ def order_details(order_id, verbose):
 
 def retail_orders(verbose):
     rivian = get_rivian_object()
-    response = rivian.retail_orders()
-    response_json = response.json()
+    response_json = rivian.retail_orders()
     if verbose:
         print(f"retail_orders:\n{response_json}")
     orders = []
@@ -145,8 +143,7 @@ def retail_orders(verbose):
 
 def get_order(order_id, verbose):
     rivian = get_rivian_object()
-    response = rivian.get_order(order_id=order_id)
-    response_json = response.json()
+    response_json = rivian.get_order(order_id=order_id)
     if verbose:
         print(f"get_order:\n{response_json}")
     order = {}
@@ -156,8 +153,7 @@ def get_order(order_id, verbose):
 
 def payment_methods(verbose):
     rivian = get_rivian_object()
-    response = rivian.payment_methods()
-    response_json = response.json()
+    response_json = rivian.payment_methods()
     if verbose:
         print(f"payment_methods:\n{response_json}")
     pmt = []
@@ -172,8 +168,7 @@ def payment_methods(verbose):
 
 def check_by_rivian_id(verbose):
     rivian = get_rivian_object()
-    response = rivian.check_by_rivian_id()
-    response_json = response.json()
+    response_json = rivian.check_by_rivian_id()
     if verbose:
         print(f"check_by_rivian_id:\n{response_json}")
     data = {'Chargepoint checkByRivianId': response_json['data']['chargepoint']['checkByRivianId']}
@@ -182,8 +177,7 @@ def check_by_rivian_id(verbose):
 
 def get_linked_email_for_rivian_id(verbose):
     rivian = get_rivian_object()
-    response = rivian.get_linked_email_for_rivian_id()
-    response_json = response.json()
+    response_json = rivian.get_linked_email_for_rivian_id()
     if verbose:
         print(f"get_linked_email_for_rivian_id:\n{response_json}")
     data = {
@@ -192,18 +186,17 @@ def get_linked_email_for_rivian_id(verbose):
     }
     return data
 
+
 def get_parameter_store_values(verbose):
     rivian = get_rivian_object()
-    response = rivian.get_parameter_store_values()
-    response_json = response.json()
+    response_json = rivian.get_parameter_store_values()
     if verbose:
         print(f"get_parameter_store_values:\n{response_json}")
 
 
 def get_vehicle(vehicle_id, verbose):
     rivian = get_rivian_object()
-    response = rivian.get_vehicle(vehicle_id=vehicle_id)
-    response_json = response.json()
+    response_json = rivian.get_vehicle(vehicle_id=vehicle_id)
     if verbose:
         print(f"get_vehicle:\n{response_json}")
     data = []
@@ -231,14 +224,9 @@ def get_vehicle(vehicle_id, verbose):
 def get_vehicle_state(vehicle_id, verbose, minimal=False):
     rivian = get_rivian_object()
     try:
-        response = rivian.get_vehicle_state(vehicle_id=vehicle_id)
+        response_json = rivian.get_vehicle_state(vehicle_id=vehicle_id, minimal=minimal)
     except Exception as e:
         print(f"{str(e)}")
-        return None
-    try:
-        response_json = response.json()
-    except Exception as e:
-        log.warning(f"Error getting vehicle state: {str(e)}")
         return None
     if verbose:
         print(f"get_vehicle_state:\n{response_json}")
@@ -248,11 +236,10 @@ def get_vehicle_state(vehicle_id, verbose, minimal=False):
 def get_vehicle_last_seen(vehicle_id, verbose):
     rivian = get_rivian_object()
     try:
-        response = rivian.get_vehicle_last_connection(vehicle_id=vehicle_id)
+        response_json = rivian.get_vehicle_last_connection(vehicle_id=vehicle_id)
     except Exception as e:
         print(f"{str(e)}")
         return None
-    response_json = response.json()
     if verbose:
         print(f"get_vehicle_last_seen:\n{response_json}")
     last_seen = parse(response_json['data']['vehicleState']['cloudConnection']['lastSync'])
@@ -262,7 +249,7 @@ def get_vehicle_last_seen(vehicle_id, verbose):
 def plan_trip(vehicle_id, starting_soc, starting_range_meters, origin_lat, origin_long, dest_lat, dest_long, verbose):
     rivian = get_rivian_object()
     try:
-        response = rivian.plan_trip(
+        response_json = rivian.plan_trip(
             vehicle_id=vehicle_id,
             starting_soc=float(starting_soc),
             starting_range_meters=float(starting_range_meters),
@@ -274,7 +261,6 @@ def plan_trip(vehicle_id, starting_soc, starting_range_meters, origin_lat, origi
     except Exception as e:
         print(f"{str(e)}")
         return None
-    response_json = response.json()
     if verbose:
         print(f"plan_trip:\n{response_json}")
     return response_json
@@ -283,11 +269,10 @@ def plan_trip(vehicle_id, starting_soc, starting_range_meters, origin_lat, origi
 def get_ota_info(vehicle_id, verbose):
     rivian = get_rivian_object()
     try:
-        response = rivian.get_ota_details(vehicle_id=vehicle_id)
+        response_json = rivian.get_ota_details(vehicle_id=vehicle_id)
     except Exception as e:
         print(f"{str(e)}")
         return None
-    response_json = response.json()
     if verbose:
         print(f"get_ota_info:\n{response_json}")
     return response_json['data']['getVehicle']
@@ -295,8 +280,7 @@ def get_ota_info(vehicle_id, verbose):
 
 def transaction_status(order_id, verbose):
     rivian = get_rivian_object()
-    response = rivian.transaction_status(order_id)
-    response_json = response.json()
+    response_json = rivian.transaction_status(order_id)
     if verbose:
         print(f"transaction_status:\n{response_json}")
     status = {}
@@ -321,16 +305,14 @@ def transaction_status(order_id, verbose):
 
 def finance_summary(order_id, verbose):
     rivian = get_rivian_object()
-    response = rivian.finance_summary(order_id=order_id)
-    response_json = response.json()
+    response_json = rivian.finance_summary(order_id=order_id)
     if verbose:
         print(f"finance_summary:\n{response_json}")
 
 
 def chargers(verbose):
     rivian = get_rivian_object()
-    response = rivian.get_registered_wallboxes()
-    response_json = response.json()
+    response_json = rivian.get_registered_wallboxes()
     if verbose:
         print(f"chargers:\n{response_json}")
     return response_json['data']['getRegisteredWallboxes']
@@ -338,8 +320,7 @@ def chargers(verbose):
 
 def delivery(order_id, verbose):
     rivian = get_rivian_object()
-    response = rivian.delivery(order_id=order_id)
-    response_json = response.json()
+    response_json = rivian.delivery(order_id=order_id)
     if verbose:
         print(f"delivery:\n{response_json}")
     vehicle = {}
@@ -352,8 +333,7 @@ def delivery(order_id, verbose):
 
 def speakers(verbose):
     rivian = get_rivian_object()
-    response = rivian.get_provisioned_camp_speakers()
-    response_json = response.json()
+    response_json = rivian.get_provisioned_camp_speakers()
     if verbose:
         print(f"speakers:\n{response_json}")
     return response_json['data']['currentUser']['vehicles']
@@ -361,8 +341,7 @@ def speakers(verbose):
 
 def images(verbose):
     rivian = get_rivian_object()
-    response = rivian.get_vehicle_images()
-    response_json = response.json()
+    response_json = rivian.get_vehicle_images()
     if verbose:
         print(f"images:\n{response_json}")
     images = []
@@ -379,8 +358,7 @@ def images(verbose):
 
 def get_user_info(verbose):
     rivian = get_rivian_object()
-    response = rivian.get_user_info()
-    response_json = response.json()
+    response_json = rivian.get_user_info()
     if verbose:
         print(f"get_user_info:\n{response_json}")
     vehicles = []
@@ -395,8 +373,7 @@ def get_user_info(verbose):
 
 def get_user(verbose):
     rivian = get_rivian_object()
-    response = rivian.user()
-    response_json = response.json()
+    response_json = rivian.user()
     if verbose:
         print(f"get_user:\n{response_json}")
     user = {
@@ -524,8 +501,10 @@ def main():
     parser.add_argument('--user_info', help='Show user information', required=False, action='store_true')
     parser.add_argument('--ota', help='Show user information', required=False, action='store_true')
     parser.add_argument('--poll', help='Poll vehicle state', required=False, action='store_true')
+    parser.add_argument('--query', help='Single poll instance (quick poll)', required=False, action='store_true')
     parser.add_argument('--metric', help='Use metric vs imperial units', required=False, action='store_true')
     parser.add_argument('--plan_trip', help='Plan a trip - starting soc, starting range in meters, origin lat,origin long,dest lat,dest long', required=False)
+    parser.add_argument('--all', help='Run all commands silently as a sort of test of all commands', required=False, action='store_true')
     parser.add_argument('--command', help='Send vehicle a command', required=False,
                         choices=['WAKE_VEHICLE',
                                  'OPEN_FRUNK',
@@ -542,6 +521,12 @@ def main():
                                  ]
                         )
     args = parser.parse_args()
+    original_stdout = sys.stdout
+
+    if args.all:
+        print("Running all commands silently")
+        f = open(os.devnull, 'w')
+        sys.stdout = f
 
     if args.login:
         login(args.verbose)
@@ -552,6 +537,13 @@ def main():
         'vehicles': [],
     }
 
+    if args.metric:
+        distance_units = "km"
+        distance_units_string = "kph"
+    else:
+        distance_units = "mi"
+        distance_units_string = "mph"
+
     vehicle_id = None
 
     needs_vehicle = args.vehicles or \
@@ -560,14 +552,16 @@ def main():
                     args.last_seen or \
                     args.ota or \
                     args.poll or \
+                    args.query or \
                     args.plan_trip or \
-                    args.user_info
+                    args.user_info or \
+                    args.all
 
     if args.vehicle_orders or (needs_vehicle and not args.vehicle_id):
         verbose = args.vehicle_orders and args.verbose
         rivian_info['vehicle_orders'] = vehicle_orders(verbose)
 
-    if args.vehicle_orders:
+    if args.vehicle_orders or args.all:
         if len(rivian_info['vehicle_orders']):
             print("Vehicle Orders:")
             for order in rivian_info['vehicle_orders']:
@@ -614,7 +608,7 @@ def main():
         else:
             print("No Vehicle Orders found")
 
-    if args.retail_orders:
+    if args.retail_orders or args.all:
         rivian_info['retail_orders'] = retail_orders(args.verbose)
         if len(rivian_info['retail_orders']):
             print("Retail Orders:")
@@ -629,7 +623,7 @@ def main():
         else:
             print("No Retail Orders found")
 
-    if args.vehicles or (needs_vehicle and not args.vehicle_id):
+    if args.vehicles or args.all or (needs_vehicle and not args.vehicle_id):
         found_vehicle = False
         verbose = args.vehicles and args.verbose
         for order in rivian_info['vehicle_orders']:
@@ -652,7 +646,7 @@ def main():
             print(f"Didn't find vehicle ID {args.vehicle_id}")
             return -1
 
-    if args.vehicles:
+    if args.vehicles or args.all:
         if len(rivian_info['vehicles']):
             print("Vehicles:")
             for v in rivian_info['vehicles']:
@@ -662,7 +656,7 @@ def main():
         else:
             print("No Vehicles found")
 
-    if args.payment_methods:
+    if args.payment_methods or args.all:
         pmt = payment_methods(args.verbose)
         print("Payment Methods:")
         if len(pmt):
@@ -676,7 +670,7 @@ def main():
         else:
             print("No Payment Methods found")
 
-    if args.charge_ids:
+    if args.charge_ids or args.all:
         print("Charge IDs:")
         data = check_by_rivian_id(args.verbose)
         for i in data:
@@ -693,7 +687,7 @@ def main():
     if args.test:
         test_graphql(args.verbose)
 
-    if args.chargers:
+    if args.chargers or args.all:
         rivian_info['chargers'] = chargers(args.verbose)
         if len(rivian_info['chargers']):
             print("Chargers:")
@@ -704,7 +698,7 @@ def main():
         else:
             print("No Chargers found")
 
-    if args.speakers:
+    if args.speakers or args.all:
         rivian_info['speakers'] = speakers(args.verbose)
         if len(rivian_info['speakers']):
             print("Speakers:")
@@ -715,7 +709,7 @@ def main():
         else:
             print("No Speakers found")
 
-    if args.ota:
+    if args.ota or args.all:
         ota = get_ota_info(vehicle_id, args.verbose)
         if len(ota):
             if ota['availableOTAUpdateDetails']:
@@ -728,7 +722,7 @@ def main():
             print("No OTA info available")
 
     # Basic images for vehicle
-    if args.images:
+    if args.images or args.all:
         rivian_info['images'] = images(args.verbose)
         if len(rivian_info['images']):
             print("Images:")
@@ -739,7 +733,7 @@ def main():
         else:
             print("No Images found")
 
-    if args.user_info:
+    if args.user_info or args.all:
         print("User Vehicles:")
         user_info = user_information(args.verbose)
         for v in user_info['vehicles']:
@@ -765,7 +759,7 @@ def main():
             print(f"   vasPhoneId: {p['vas']['vasPhoneId']}")
             print(f"   publicKey: {p['vas']['publicKey']}")
 
-    if args.user and not args.privacy:
+    if (args.user or args.all) and not args.privacy:
         user = get_user(args.verbose)
         print("User details:")
         for i in user:
@@ -786,7 +780,7 @@ def main():
                 print(f"{i}: {user[i]}")
         print("\n")
 
-    if args.state:
+    if args.state or args.all:
         state = get_vehicle_state(vehicle_id, args.verbose)
         print("Vehicle State:")
         print(f"Power State: {state['powerState']['value']}")
@@ -874,21 +868,27 @@ def main():
         print(f"      Rear Left: {state['tirePressureStatusRearLeft']['value']}")
         print(f"      Rear Right: {state['tirePressureStatusRearRight']['value']}")
 
-    if args.poll:
+    if args.poll or args.query or args.all:
+        single_poll = args.query or args.all
         # Power state = ready, go, sleep, standby,
         # Charge State = charging_ready or charging_active
         # Charger Status = chrgr_sts_not_connected, chrgr_sts_connected_charging, chrgr_sts_connected_no_chrg
-        print(f"Polling car every {POLL_FREQUENCY} seconds, only showing changes in data.")
-        if INACTIVITY_WAIT:
-            print(f"If 'ready' and inactive for {INACTIVITY_WAIT / 60:.0f} minutes will pause polling once for "
-                  f"every ready state cycle for {VEHICLE_SLEEP_WAIT / 60:.0f} minutes to allow car to go to sleep.")
-        print("")
+        if not single_poll:
+            print(f"Polling car every {POLL_FREQUENCY} seconds, only showing changes in data.")
+            if INACTIVITY_WAIT:
+                print(f"If 'ready' and inactive for {INACTIVITY_WAIT / 60:.0f} minutes will pause polling once for "
+                      f"every ready state cycle for {VEHICLE_SLEEP_WAIT / 60:.0f} minutes to allow car to go to sleep.")
+            print("")
 
-        print("timestamp,Power,Drive Mode,Gear,Mileage,Battery,Range,Latitude,Longitude,Charger Status,Charge State,Battery Limit,Charge End")
+        print("timestamp,Power,Drive Mode,Gear,Mileage,Battery,Range,Speed,Latitude,Longitude,Charger Status,Charge State,Battery Limit,Charge End")
         last_state_change = time.time()
         last_state = None
         last_power_state = None
         long_sleep_completed = False
+        last_lat = None
+        last_long = None
+        last_lat_long_time = None
+        speed = 0
         while True:
             state = get_vehicle_state(vehicle_id, args.verbose, minimal=True)
             if not state:
@@ -898,6 +898,18 @@ def main():
                 # Allow one long sleep per ready state cycle to allow car to sleep
                 long_sleep_completed = False
             last_power_state = state['powerState']['value']
+            if last_lat and last_long and last_lat_long_time:
+                distance = haversine(
+                    (last_lat, last_long),
+                    (float(state['gnssLocation']['latitude']),
+                     float(state['gnssLocation']['longitude'])),
+                    unit=distance_units
+                )
+                elapsed_time = (datetime.now() - last_lat_long_time).total_seconds()
+                speed = distance * (60 * 60 / elapsed_time)
+            last_lat = float(state['gnssLocation']['latitude'])
+            last_long = float(state['gnssLocation']['longitude'])
+            last_lat_long_time = datetime.now()
             current_state = \
                 f"{state['powerState']['value']}," \
                 f"{state['driveMode']['value']}," \
@@ -905,16 +917,19 @@ def main():
                 f"{meters_to_miles(state['vehicleMileage']['value'], args.metric):.1f}," \
                 f"{state['batteryLevel']['value']:.1f}%," \
                 f"{kilometers_to_miles(state['distanceToEmpty']['value'], args.metric):.1f}," \
+                f"{speed:.1f} {distance_units_string}," \
                 f"{state['gnssLocation']['latitude']}," \
                 f"{state['gnssLocation']['longitude']}," \
                 f"{state['chargerStatus']['value']}," \
                 f"{state['chargerState']['value']}," \
                 f"{state['batteryLimit']['value']:.1f}%," \
                 f"{state['timeToEndOfCharge']['value'] // 60}h{state['timeToEndOfCharge']['value'] % 60}m"
-            if current_state != last_state:
+            if single_poll or current_state != last_state:
                 print(f"{datetime.now().strftime('%m/%d/%Y, %H:%M:%S %p %Z').strip()}," + current_state)
                 last_state_change = datetime.now()
             last_state = current_state
+            if single_poll:
+                break
             if state['powerState']['value'] == 'sleep':
                 time.sleep(POLL_FREQUENCY)
             else:
@@ -929,7 +944,7 @@ def main():
                 else:
                     time.sleep(POLL_FREQUENCY)
 
-    if args.vehicle:
+    if args.vehicle or args.all:
         vehicle = get_vehicle(vehicle_id, args.verbose)
         print("Vehicle Users:")
         for u in vehicle:
@@ -940,12 +955,16 @@ def main():
             for d in u['devices']:
                 print(f"      {d['deviceName']}, Paired: {d['isPaired']}, Enabled: {d['isEnabled']}, ID: {d['id']}")
 
-    if args.last_seen:
+    if args.last_seen or args.all:
         last_seen = get_vehicle_last_seen(vehicle_id, args.verbose)
         print(f"Vehicle last seen: {show_local_time(last_seen)}")
 
-    if args.plan_trip:
-        starting_soc, starting_range, origin_lat, origin_long, dest_lat, dest_long = args.plan_trip.split(',')
+    if args.plan_trip or args.all:
+        if args.all:
+            starting_soc, starting_range, origin_lat, origin_long, dest_lat, dest_long = \
+                ["85.0", "360", "42.0772", "-71.6303", "42.1399", "-71.5163"]
+        else:
+            starting_soc, starting_range, origin_lat, origin_long, dest_lat, dest_long = args.plan_trip.split(',')
         starting_range_meters = miles_to_meters(float(starting_range), args.metric)
         planned_trip = plan_trip(
             vehicle_id,
@@ -959,9 +978,13 @@ def main():
         )
         print(planned_trip)
 
+    # Work in progress - TODO
     if args.command:
         vehicle_command(args.command, args.vehicle_id, args.verbose)
 
+    if args.all:
+        sys.stdout = original_stdout
+        print("All commands ran and no exceptions encountered")
 
 if __name__ == '__main__':
     main()
