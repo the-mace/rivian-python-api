@@ -615,8 +615,6 @@ def main():
             vehicle = {}
             for i in details:
                 value = details[i]
-                if i in ('vin', 'vehicleId') and args.privacy:
-                    value = value[-8:-3] + 'xxx'
                 vehicle[i] = value
             rivian_info['vehicles'].append(vehicle)
             if not found_vehicle:
@@ -771,7 +769,8 @@ def main():
         print(f"Drive Mode: {state['driveMode']['value']}")
         print(f"Gear Status: {state['gearStatus']['value']}")
         print(f"Mileage: {meters_to_distance_units(state['vehicleMileage']['value'], args.metric):.1f} {distance_units_string}")
-        print(f"Location: {state['gnssLocation']['latitude']},{state['gnssLocation']['longitude']}")
+        if not args.privacy:
+            print(f"Location: {state['gnssLocation']['latitude']},{state['gnssLocation']['longitude']}")
 
         print("Battery:")
         print(f"   Battery Level: {state['batteryLevel']['value']:.1f}%")
@@ -864,7 +863,11 @@ def main():
                       f"every ready state cycle for {VEHICLE_SLEEP_WAIT / 60:.0f} minutes to allow car to go to sleep.")
             print("")
 
-        print("timestamp,Power,Drive Mode,Gear,Mileage,Battery,Range,Speed,Latitude,Longitude,Charger Status,Charge State,Battery Limit,Charge End")
+        if args.privacy:
+            lat_long_title = ''
+        else:
+            lat_long_title = 'Latitude,Longitude,'
+        print(f"timestamp,Power,Drive Mode,Gear,Mileage,Battery,Range,Speed,{lat_long_title}Charger Status,Charge State,Battery Limit,Charge End")
         last_state_change = time.time()
         last_state = None
         last_power_state = None
@@ -897,9 +900,12 @@ def main():
                 f"{meters_to_distance_units(state['vehicleMileage']['value'], args.metric):.1f}," \
                 f"{state['batteryLevel']['value']:.1f}%," \
                 f"{kilometers_to_miles(state['distanceToEmpty']['value'], args.metric):.1f}," \
-                f"{speed:.1f} {distance_units_string}," \
-                f"{state['gnssLocation']['latitude']}," \
-                f"{state['gnssLocation']['longitude']}," \
+                f"{speed:.1f} {distance_units_string},"
+            if not args.privacy:
+                current_state += \
+                    f"{state['gnssLocation']['latitude']}," \
+                    f"{state['gnssLocation']['longitude']},"
+            current_state += \
                 f"{state['chargerStatus']['value']}," \
                 f"{state['chargerState']['value']}," \
                 f"{state['batteryLimit']['value']:.1f}%," \
@@ -965,6 +971,7 @@ def main():
     if args.all:
         sys.stdout = original_stdout
         print("All commands ran and no exceptions encountered")
+
 
 if __name__ == '__main__':
     main()
