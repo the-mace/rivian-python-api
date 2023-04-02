@@ -118,8 +118,9 @@ def order_details(order_id, verbose):
         'model': response_json['data']['order']['vehicle']['model'],
     }
     for i in response_json['data']['order']['items']:
-        for c in i['configuration']['options']:
-            data[c['groupName']] = c['optionName']
+        if i['configuration'] is not None:
+            for c in i['configuration']['options']:
+                data[c['groupName']] = c['optionName']
     return data
 
 
