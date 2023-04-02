@@ -34,7 +34,6 @@ it also limits the ability to extend the owners experience through third party p
 
 ### Missing & Unknown
 1. There does not appear to be an API call that returns `speed` for the vehicle. With GPS location and polling and math you can figure it out with haversine etc. type approaches. Example in the CLI
-2. For the `planTrip` API, the map format (`routeResponse`) is not yet understood.
 
 ## Dependencies
 
@@ -101,7 +100,8 @@ bin/rivian_cli --poll
 
 ### Trip planning
 ```
-bin/rivian_cli --plan_trip 85,225,42.0772,-71.6303,42.1399,-71.5163
+bin/rivian_cli --plan_trip 85,225,40.5112,-89.0559,39.9310,-104.9530
+Plan trip will create a basic visualization of the route and charge stops. MAPBOX_API_KEY needs to be set in .env
 ```
 
 ### Other commands
