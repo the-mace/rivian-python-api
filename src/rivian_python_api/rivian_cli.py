@@ -230,7 +230,10 @@ def get_vehicle_state(vehicle_id, verbose, minimal=False):
         return None
     if verbose:
         print(f"get_vehicle_state:\n{response_json}")
-    return response_json['data']['vehicleState']
+    if 'data' in response_json and 'vehicleState' in response_json['data']:
+        return response_json['data']['vehicleState']
+    else:
+        return None
 
 
 def get_vehicle_last_seen(vehicle_id, verbose):
@@ -877,11 +880,17 @@ def main():
         distance_time = None
         elapsed_time = None
         speed = 0
+        found_bad_response = False
         while True:
             state = get_vehicle_state(vehicle_id, args.verbose, minimal=True)
             if not state:
-                time.sleep(5)
+                if not found_bad_response:
+                    print(f"{datetime.now().strftime('%m/%d/%Y, %H:%M:%S %p %Z').strip()} Rivian API appears offline")
+                found_bad_response = True
+                last_state = None
+                time.sleep(POLL_FREQUENCY)
                 continue
+            found_bad_response = False
             if last_power_state != 'ready' and state['powerState']['value'] == 'ready':
                 # Allow one long sleep per ready state cycle to allow car to sleep
                 long_sleep_completed = False
