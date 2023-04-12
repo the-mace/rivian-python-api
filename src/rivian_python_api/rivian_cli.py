@@ -772,7 +772,7 @@ def main():
         print(f"Power State: {state['powerState']['value']}")
         print(f"Drive Mode: {state['driveMode']['value']}")
         print(f"Gear Status: {state['gearStatus']['value']}")
-        print(f"Mileage: {meters_to_distance_units(state['vehicleMileage']['value'], args.metric):.1f} {distance_units_string}")
+        print(f"Mileage: {meters_to_distance_units(state['vehicleMileage']['value'], args.metric):.1f} {distance_units}")
         if not args.privacy:
             print(f"Location: {state['gnssLocation']['latitude']},{state['gnssLocation']['longitude']}")
 
