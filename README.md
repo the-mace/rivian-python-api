@@ -34,12 +34,42 @@ it also limits the ability to extend the owners experience through third party p
 
 ### Missing & Unknown
 1. There does not appear to be an API call that returns `speed` for the vehicle. With GPS location and polling and math you can figure it out with haversine etc. type approaches. Example in the CLI
-2. For the `planTrip` API, the map format (`routeResponse`) is not yet understood.
+2. For the `planTrip` API, the map format (`routeResponse`) is not yet understood but underway (See PR #3)
 
 ## Dependencies
 
 Python 3
 pip
+
+## Security
+
+Without additional authentication the API and CLI can only monitor your 
+Rivian (when you use the API or issue CLI commands). 
+
+They have no ability to do the `actions` (see above) to unlock, enable drive, etc.
+
+Some information returned by the API from Rivian and to the screen by the CLI is personally
+identifiable information (PII) such as addresses, email addresses, GPS coordinates, etc.
+
+There are some options in the CLI to hide some of that but consider
+your data before sharing in public places.
+
+### API
+The API does nothing in terms of storage of credentials etc.
+
+### CLI
+The CLI supports the login flow including multi-factor authentication communicating directly with Rivian.
+
+It does not preserve your email or password. 
+It does save your authentication tokens (locally on your machine in `rivian_auth.pickle`) 
+to make it possible to run subsequent commands without logging in again. 
+
+To remove your authentication information (again only on your machine) delete the `rivian_auth.pickle` file.
+
+No data is sent or stored anywhere other than your machine or directly at Rivian according 
+to their understood API behavior.
+
+Feel free to review the code to verify the above.
 
 ## Setup
 
