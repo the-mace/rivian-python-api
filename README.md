@@ -129,9 +129,9 @@ bin/rivian_cli --poll
 ```
 
 ### Trip planning
+Plan trip will create a basic visualization of the route and charge stops. MAPBOX_API_KEY needs to be set in `.env`
 ```
 bin/rivian_cli --plan_trip 85,225,40.5112,-89.0559,39.9310,-104.9530
-Plan trip will create a basic visualization of the route and charge stops. MAPBOX_API_KEY needs to be set in .env
 ```
 
 ### Other commands
