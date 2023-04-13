@@ -5,11 +5,15 @@ import os
 import sys
 import argparse
 from rivian_api import *
+from rivian_map import *
 import pickle
 from dateutil.parser import parse
 from dateutil import tz
 import time
 from datetime import datetime
+
+from dotenv import load_dotenv
+load_dotenv()
 
 # Polling constantly while vehicle is awake keeps it awake, all times in seconds
 POLL_FREQUENCY = 30
@@ -972,7 +976,7 @@ def main():
             dest_long,
             args.verbose
         )
-        print(planned_trip)
+        decode_and_map(planned_trip)
 
     # Work in progress - TODO
     if args.command:
