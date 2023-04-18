@@ -537,6 +537,8 @@ def main():
         distance_units_string = "mph"
 
     vehicle_id = None
+    if args.vehicle_id:
+        vehicle_id = args.vehicle_id
 
     needs_vehicle = args.vehicles or \
                     args.vehicle or \
@@ -964,7 +966,13 @@ def main():
             starting_soc, starting_range, origin_lat, origin_long, dest_lat, dest_long = \
                 ["85.0", "360", "42.0772", "-71.6303", "42.1399", "-71.5163"]
         else:
-            starting_soc, starting_range, origin_lat, origin_long, dest_lat, dest_long = args.plan_trip.split(',')
+            if len(args.plan_trip.split(',')) == 4:
+                starting_soc, starting_range, origin_place, dest_place = args.plan_trip.split(',')
+                origin_lat, origin_long = extract_lat_long(origin_place)
+                dest_lat, dest_long = extract_lat_long(dest_place) 
+            else:
+                starting_soc, starting_range, origin_lat, origin_long, dest_lat, dest_long = args.plan_trip.split(',')
+
         starting_range_meters = miles_to_meters(float(starting_range), args.metric)
         planned_trip = plan_trip(
             vehicle_id,

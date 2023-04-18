@@ -3,6 +3,10 @@ import json
 import math
 import polyline
 import plotly.graph_objects as go
+from geopy.geocoders import Nominatim
+
+# Initialize Nominatim geocoder
+geolocator = Nominatim(user_agent="rivian_cli")
 
 def decode_and_map(planned_trip):
     # route response is a json object embedded as a string so parse it out
@@ -46,15 +50,16 @@ def show_map(route, waypoints=[]):
         name='Charge Stops'
     ))
 
-    fig.add_trace(go.Scattermapbox(
-        mode = "markers",
-        lat = [waypoints[-1]['latitude']],
-        lon = [waypoints[-1]['longitude']],
-        customdata=[destination_hover_info(waypoints[-1])],
-        hovertemplate='%{customdata}',
-        marker = {'size': 20},
-        name='Destination'
-    ))
+    if waypoints is not None:
+        fig.add_trace(go.Scattermapbox(
+            mode = "markers",
+            lat = [waypoints[-1]['latitude']],
+            lon = [waypoints[-1]['longitude']],
+            customdata=[destination_hover_info(waypoints[-1])],
+            hovertemplate='%{customdata}',
+            marker = {'size': 20},
+            name='Destination'
+        ))
 
     # Find the bounding box of the polyline
     min_lat, max_lat = min(lat for lat, lng in route), max(lat for lat, lng in route)
@@ -87,3 +92,10 @@ def destination_hover_info(dest):
             f"Arrival SOC: {str(math.floor(dest['arrivalSOC']))}%"
             )
     return info
+
+# Define function to extract latitude and longitude from input field
+def extract_lat_long(input_field):
+    location = geolocator.geocode(input_field)
+    lat = location.latitude
+    long = location.longitude
+    return lat, long
