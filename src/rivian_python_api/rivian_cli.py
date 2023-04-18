@@ -537,6 +537,8 @@ def main():
         distance_units_string = "mph"
 
     vehicle_id = None
+    if args.vehicle_id:
+        vehicle_id = args.vehicle_id
 
     needs_vehicle = args.vehicles or \
                     args.vehicle or \
