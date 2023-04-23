@@ -446,8 +446,11 @@ def show_local_time(ts):
     return t.strftime("%m/%d/%Y, %H:%M%p %Z")
 
 
-def celsius_to_fahrenheit(c):
-    return (c * 9/5) + 32
+def celsius_to_temp_units(c, metric=False):
+    if metric:
+        return c
+    else:
+        return (c * 9/5) + 32
 
 
 def meters_to_distance_units(m, metric=False):
@@ -464,7 +467,7 @@ def miles_to_meters(m, metric=False):
         return m * 1609.0
 
 
-def kilometers_to_miles(m, metric=False):
+def kilometers_to_distance_units(m, metric=False):
     if metric:
         return m
     else:
@@ -532,9 +535,11 @@ def main():
     if args.metric:
         distance_units = "km"
         distance_units_string = "kph"
+        temp_units_string = "C"
     else:
         distance_units = "mi"
         distance_units_string = "mph"
+        temp_units_string = "F"
 
     vehicle_id = None
     if args.vehicle_id:
@@ -778,13 +783,13 @@ def main():
         print(f"Power State: {state['powerState']['value']}")
         print(f"Drive Mode: {state['driveMode']['value']}")
         print(f"Gear Status: {state['gearStatus']['value']}")
-        print(f"Mileage: {meters_to_distance_units(state['vehicleMileage']['value'], args.metric):.1f} {distance_units}")
+        print(f"Odometer: {meters_to_distance_units(state['vehicleMileage']['value'], args.metric):.1f} {distance_units}")
         if not args.privacy:
             print(f"Location: {state['gnssLocation']['latitude']},{state['gnssLocation']['longitude']}")
 
         print("Battery:")
         print(f"   Battery Level: {state['batteryLevel']['value']:.1f}%")
-        print(f"   Range: {state['distanceToEmpty']['value']} miles")
+        print(f"   Range: {kilometers_to_distance_units(state['distanceToEmpty']['value'], args.metric):.1f} {distance_units}")
         print(f"   Battery Limit: {state['batteryLimit']['value']:.1f}%")
         print(f"   Charging state: {state['chargerState']['value']}")
         print(f"   Charger status: {state['chargerStatus']['value']}")
@@ -803,8 +808,8 @@ def main():
         print(f"   Current Status: {state['otaCurrentStatus']['value']}")
 
         print("Climate:")
-        print(f"   Climate Interior Temp: {celsius_to_fahrenheit(state['cabinClimateInteriorTemperature']['value'])}ºF")
-        print(f"   Climate Driver Temp: {celsius_to_fahrenheit(state['cabinClimateDriverTemperature']['value'])}ºF")
+        print(f"   Climate Interior Temp: {celsius_to_temp_units(state['cabinClimateInteriorTemperature']['value'], args.metric)}º{temp_units_string}")
+        print(f"   Climate Driver Temp: {celsius_to_temp_units(state['cabinClimateDriverTemperature']['value'], args.metric)}º{temp_units_string}")
         print(f"   Cabin Preconditioning Status: {state['cabinPreconditioningStatus']['value']}")
         print(f"   Cabin Preconditioning Type: {state['cabinPreconditioningType']['value']}")
         print(f"   Defrost: {state['defrostDefogStatus']['value']}")
@@ -915,7 +920,7 @@ def main():
                 f"{state['gearStatus']['value']}," \
                 f"{meters_to_distance_units(state['vehicleMileage']['value'], args.metric):.1f}," \
                 f"{state['batteryLevel']['value']:.1f}%," \
-                f"{kilometers_to_miles(state['distanceToEmpty']['value'], args.metric):.1f}," \
+                f"{kilometers_to_distance_units(state['distanceToEmpty']['value'], args.metric):.1f}," \
                 f"{speed:.1f} {distance_units_string},"
             if not args.privacy:
                 current_state += \
