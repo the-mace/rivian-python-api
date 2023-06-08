@@ -33,8 +33,7 @@ Note you can definitely argue that their approach is more secure than that of ot
 it also limits the ability to extend the owners experience through third party products.
 
 ### Missing & Unknown
-1. There does not appear to be an API call that returns `speed` for the vehicle. With GPS location and polling and math you can figure it out with haversine etc. type approaches. Example in the CLI
-2. The live charging session data is returning stale data vs live data shown in the app. Valid call/response but stale data. Unclear why this is. Live charging history is returning current data as it charges.
+1. There does not appear to be an API call that returns `speed` for the vehicle. With odometer and polling you can calculate it. Example in the CLI
 
 ## Dependencies
 
