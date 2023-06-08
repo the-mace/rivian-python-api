@@ -559,22 +559,19 @@ class Rivian:
         response = self.raw_graphql_query(url=RIVIAN_CHARGING_PATH, query=query, headers=headers)
         return response.json()
 
-    def get_live_session_data(self, vehicle_id, transaction_id, charger_id):
+    def get_live_session_data(self, vehicle_id):
         headers = self.gateway_headers()
         query = {
             "operationName": "getLiveSessionData",
-            "query": "query getLiveSessionData($vehicleId: ID, $transactionId: ID, $chargerId: ID) "
-                     "{ getLiveSessionData(vehicleId: $vehicleId, transactionId: $transactionId, "
-                     "chargerId: $chargerId) "
+            "query": "query getLiveSessionData($vehicleId: ID) "
+                     "{ getLiveSessionData(vehicleId: $vehicleId) "
                      "{ isRivianCharger isFreeSession vehicleChargerState { value updatedAt } "
                      "chargerId startTime timeElapsed timeRemaining { value updatedAt } kilometersChargedPerHour "
                      "{ value updatedAt } power { value updatedAt } rangeAddedThisSession { value updatedAt } "
                      "totalChargedEnergy { value updatedAt } timeRemaining { value updatedAt } vehicleChargerState "
                      "{ value updatedAt } kilometersChargedPerHour { value updatedAt } currentPrice } }",
             "variables": {
-                "vehicleId": vehicle_id,
-                "transactionId": transaction_id,
-                "chargerId": charger_id
+                "vehicleId": vehicle_id
             },
         }
         response = self.raw_graphql_query(url=RIVIAN_CHARGING_PATH, query=query, headers=headers)

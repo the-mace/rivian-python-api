@@ -429,9 +429,9 @@ def charging_session(verbose):
     return session
 
 
-def live_charging_session(vehicle_id, transaction_id, charger_id, verbose=False):
+def live_charging_session(vehicle_id, verbose=False):
     rivian = get_rivian_object()
-    response_json = rivian.get_live_session_data(vehicle_id, transaction_id, charger_id)
+    response_json = rivian.get_live_session_data(vehicle_id)
     if verbose:
         print(f"get_live_session_data:\n{response_json}")
     session = response_json['data']['getLiveSessionData']
@@ -1117,18 +1117,29 @@ def main():
         print(f"Charging Updated: {show_local_time(session['vehicleChargerState']['updatedAt'])}")
 
     if args.live_charging_session:
-        session = charging_session(args.verbose)
+        state = get_vehicle_state(vehicle_id, args.verbose)
         s = live_charging_session(vehicle_id=vehicle_id,
-                                  transaction_id=session['transactionId'],
-                                  charger_id=session['chargerId'],
                                   verbose=args.verbose)
 
+        print(f"Battery Level: {state['batteryLevel']['value']:.1f}%")
+        print(f"Range: {kilometers_to_distance_units(state['distanceToEmpty']['value'], args.metric):.1f} {distance_units}")
+        print(f"Battery Limit: {state['batteryLimit']['value']:.1f}%")
+        print(f"Charging state: {state['chargerState']['value']}")
+        print(f"Charger status: {state['chargerStatus']['value']}")
+
         print(f"Charging Active: {s['vehicleChargerState']['value'] == 'charging_active'}")
-        print(f"Charging Updated: {show_local_time(session['vehicleChargerState']['updatedAt'])}")
+        print(f"Charging Updated: {show_local_time(s['vehicleChargerState']['updatedAt'])}")
         print(f"Charge Start: {show_local_time(s['startTime'])}")
         elapsed_seconds = int(s['timeElapsed'])
         elapsed = get_elapsed_time_string(elapsed_seconds)
         print(f"Elapsed Time: {elapsed}")
+        remaining_seconds = int(s['timeRemaining']['value'])
+        remaining = get_elapsed_time_string(remaining_seconds)
+        print(f"Remaining Time: {remaining}")
+        print(f"Charge power: {s['power']['value']} kW")
+        print(f"Charge rate: {meters_to_distance_units(s['kilometersChargedPerHour']['value']*1000, args.metric):.1f} {distance_units_string}")
+        print(f"Range added: {meters_to_distance_units(s['rangeAddedThisSession']['value']*1000, args.metric):.1f} {distance_units}")
+        print(f"Total charged energy: {s['totalChargedEnergy']['value']} kW")
 
     if args.live_charging_history:
         s = live_charging_history(vehicle_id=vehicle_id,
