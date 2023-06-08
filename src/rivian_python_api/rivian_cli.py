@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import os
 import sys
 import argparse
 from rivian_api import *
@@ -10,7 +9,7 @@ import pickle
 from dateutil.parser import parse
 from dateutil import tz
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -392,6 +391,64 @@ def get_user(verbose):
     return user
 
 
+def charging_schedule(vehicle_id, verbose):
+    rivian = get_rivian_object()
+    response_json = rivian.get_charging_schedule(vehicle_id)
+    if verbose:
+        print(f"get_charging_schedule:\n{response_json}")
+    schedule = response_json['data']['getVehicle']['chargingSchedules']
+    return schedule
+
+
+def charging_sessions(verbose):
+    rivian = get_rivian_object()
+    response_json = rivian.get_completed_session_summaries()
+    if verbose:
+        print(f"get_completed_session_summaries:\n{response_json}")
+    sessions = []
+    for s in response_json['data']['getCompletedSessionSummaries']:
+        sessions.append({
+            'charge_start': s['startInstant'],
+            'charge_end': s['endInstant'],
+            'energy': s['totalEnergyKwh'],
+            'vendor': s['vendor'],
+            'range_added': s['rangeAddedKm'],
+            'transaction_id': s['transactionId'],
+        })
+    # sort sessions by charge_start
+    sessions.sort(key=lambda x: x['charge_start'])
+    return sessions
+
+
+def charging_session(verbose):
+    rivian = get_rivian_object()
+    response_json = rivian.get_non_rivian_user_session()
+    if verbose:
+        print(f"get_non_rivian_user_session:\n{response_json}")
+    session = response_json['data']['getNonRivianUserSession']
+    return session
+
+
+def live_charging_session(vehicle_id, transaction_id, charger_id, verbose=False):
+    rivian = get_rivian_object()
+    response_json = rivian.get_live_session_data(vehicle_id, transaction_id, charger_id)
+    if verbose:
+        print(f"get_live_session_data:\n{response_json}")
+    session = response_json['data']['getLiveSessionData']
+    return session
+
+
+def live_charging_history(vehicle_id, verbose=False):
+    rivian = get_rivian_object()
+    response_json = rivian.get_live_session_history(vehicle_id)
+    if verbose:
+        print(f"get_live_session_history:\n{response_json}")
+    history = response_json['data']['getLiveSessionHistory']['chartData']
+    # sort history by 'time'
+    history.sort(key=lambda x: x['time'])
+    return history
+
+
 def vehicle_command(command, vehicle_id=None, verbose=False):
     vehiclePublicKey = None
     user_info = user_information(verbose)
@@ -436,13 +493,18 @@ def test_graphql(verbose):
         print(f"test_graphql:\n{response_json}")
 
 
-def show_local_time(ts):
+def get_local_time(ts):
     if type(ts) is str:
         t = parse(ts)
     else:
         t = ts
     to_zone = tz.tzlocal()
     t = t.astimezone(to_zone)
+    return t
+
+
+def show_local_time(ts):
+    t = get_local_time(ts)
     return t.strftime("%m/%d/%Y, %H:%M%p %Z")
 
 
@@ -474,6 +536,15 @@ def kilometers_to_distance_units(m, metric=False):
         return (m * 1000) / 1609.0
 
 
+def get_elapsed_time_string(elapsed_time_in_seconds):
+    elapsed_time = timedelta(seconds=elapsed_time_in_seconds)
+    total_seconds = int(elapsed_time.total_seconds())
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+    return f"{hours} hours, {minutes} minutes, {seconds} seconds"
+
+
 def main():
     parser = argparse.ArgumentParser(description='Rivian CLI')
     parser.add_argument('--login', help='Login to account', required=False, action='store_true')
@@ -499,6 +570,14 @@ def main():
     parser.add_argument('--query', help='Single poll instance (quick poll)', required=False, action='store_true')
     parser.add_argument('--metric', help='Use metric vs imperial units', required=False, action='store_true')
     parser.add_argument('--plan_trip', help='Plan a trip - starting soc, starting range in meters, origin lat,origin long,dest lat,dest long', required=False)
+
+    parser.add_argument('--charging_schedule', help='Get charging schedule', required=False, action='store_true')
+    parser.add_argument('--charge_sessions', help='Get charging sessions', required=False, action='store_true')
+    parser.add_argument('--last_charge', help='Get last charge session', required=False, action='store_true')
+    parser.add_argument('--charge_session', help='Get current charging session', required=False, action='store_true')
+    parser.add_argument('--live_charging_session', help='Get live charging session', required=False, action='store_true')
+    parser.add_argument('--live_charging_history', help='Get live charging session history', required=False, action='store_true')
+
     parser.add_argument('--all', help='Run all commands silently as a sort of test of all commands', required=False, action='store_true')
     parser.add_argument('--command', help='Send vehicle a command', required=False,
                         choices=['WAKE_VEHICLE',
@@ -554,6 +633,10 @@ def main():
                     args.query or \
                     args.plan_trip or \
                     args.user_info or \
+                    args.charge_session or \
+                    args.live_charging_session or \
+                    args.live_charging_history or \
+                    args.charging_schedule or \
                     args.all
 
     if args.vehicle_orders or (needs_vehicle and not args.vehicle_id):
@@ -990,6 +1073,75 @@ def main():
             args.verbose
         )
         decode_and_map(planned_trip)
+
+    if args.charging_schedule:
+        schedules = charging_schedule(vehicle_id, args.verbose)
+        for s in schedules:
+            print(f"Start Time: {s['startTime']}")
+            print(f"Duration: {s['duration']}")
+            if not args.privacy:
+                print(f"Location: {s['location']['latitude']},{s['location']['longitude']}")
+            print(f"Amperage: {s['amperage']}")
+            print(f"Enabled: {s['enabled']}")
+            print(f"Weekdays: {s['weekDays']}")
+
+
+    if args.charge_sessions or args.last_charge:
+        sessions = charging_sessions(args.verbose)
+        if args.last_charge:
+            sessions = [sessions[-1]]
+        for s in sessions:
+            if s['energy'] == 0:
+                continue
+            print(f"Transaction Id: {s['transaction_id']}")
+            print(f"Charge Start: {show_local_time(s['charge_start'])}")
+            print(f"Charge End: {show_local_time(s['charge_end'])}")
+            print(f"Energy added: {s['energy']} kWh")
+            eph = s['energy'] / \
+                  ((get_local_time(s['charge_end']) - get_local_time(s['charge_start'])).total_seconds() / 3600)
+            print(f"Charge rate: {eph:.1f} kW/h")
+            print(f"Vendor: {s['vendor']}") if s['vendor'] else None
+            if s['range_added']:
+                print(f"Range added: {kilometers_to_distance_units(s['range_added'], args.metric):.1f} {distance_units}")
+                rph = kilometers_to_distance_units(s['range_added'], args.metric) / \
+                      ((get_local_time(s['charge_end']) - get_local_time(s['charge_start'])).total_seconds() / 3600)
+                print(f"Range added rate: {rph:.1f} {distance_units}/h")
+            print()
+
+    if args.charge_session:
+        session = charging_session(args.verbose)
+        print(f"Charger ID: {session['chargerId']}")
+        print(f"Transaction ID: {session['transactionId']}")
+        print(f"Rivian Charger: {session['isRivianCharger']}")
+        print(f"Charging Active: {session['vehicleChargerState']['value'] == 'charging_active'}")
+        print(f"Charging Updated: {show_local_time(session['vehicleChargerState']['updatedAt'])}")
+
+    if args.live_charging_session:
+        session = charging_session(args.verbose)
+        s = live_charging_session(vehicle_id=vehicle_id,
+                                  transaction_id=session['transactionId'],
+                                  charger_id=session['chargerId'],
+                                  verbose=args.verbose)
+
+        print(f"Charging Active: {s['vehicleChargerState']['value'] == 'charging_active'}")
+        print(f"Charging Updated: {show_local_time(session['vehicleChargerState']['updatedAt'])}")
+        print(f"Charge Start: {show_local_time(s['startTime'])}")
+        elapsed_seconds = int(s['timeElapsed'])
+        elapsed = get_elapsed_time_string(elapsed_seconds)
+        print(f"Elapsed Time: {elapsed}")
+
+    if args.live_charging_history:
+        s = live_charging_history(vehicle_id=vehicle_id,
+                                  verbose=args.verbose)
+        start_time = None
+        end_time = None
+        for d in s:
+            print(f"{show_local_time(d['time'])}: {d['kw']} kW")
+            if not start_time:
+                start_time = get_local_time(d['time'])
+            end_time = get_local_time(d['time'])
+        elapsed = get_elapsed_time_string((end_time - start_time).total_seconds())
+        print(f"Elapsed Time: {elapsed}")
 
     # Work in progress - TODO
     if args.command:

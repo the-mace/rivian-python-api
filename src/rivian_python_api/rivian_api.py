@@ -510,6 +510,90 @@ class Rivian:
         response = self.raw_graphql_query(url=RIVIAN_ORDERS_PATH, query=query, headers=headers)
         return response.json()
 
+    def get_charging_schedule(self, vehicle_id):
+        headers = self.gateway_headers()
+        query = {
+            "operationName": "GetChargingSchedule",
+            "query": "query GetChargingSchedule($vehicleId: String!) { getVehicle(id: $vehicleId) { chargingSchedules { startTime duration location { latitude longitude } amperage enabled weekDays } } }",
+            "variables": {
+                "vehicleId": vehicle_id
+            },
+        }
+        response = self.raw_graphql_query(url=RIVIAN_GATEWAY_PATH, query=query, headers=headers)
+        return response.json()
+
+
+
+    def get_completed_session_summaries(self):
+        headers = self.gateway_headers()
+        query = {
+            "operationName": "getCompletedSessionSummaries",
+            "query": "query getCompletedSessionSummaries { getCompletedSessionSummaries { chargerType currencyCode paidTotal startInstant endInstant totalEnergyKwh rangeAddedKm city transactionId vehicleId vehicleName vendor isRoamingNetwork isPublic isHomeCharger meta {  transactionIdGroupingKey  dataSources } }}",
+            "variables": {},
+        }
+        response = self.raw_graphql_query(url=RIVIAN_CHARGING_PATH, query=query, headers=headers)
+        return response.json()
+
+
+    def get_charging_session_status(self, job_id, user_id):
+        headers = self.gateway_headers()
+        query = {
+            "operationName": "GetChargingSessionStatus",
+            "query": "query GetChargingSessionStatus($jobId: ID!, $userId: ID!) { getSessionStatus(jobId: $jobId, userId: $userId) { status errorMessage errorId sessionId } }",
+            "variables": {
+                "jobId": "123",
+                "userId": "123"
+            },
+        }
+        response = self.raw_graphql_query(url=RIVIAN_CHARGING_PATH, query=query, headers=headers)
+        return response.json()
+
+
+    def get_non_rivian_user_session(self):
+        headers = self.gateway_headers()
+        query = {
+            "operationName": "getNonRivianUserSession",
+            "query": "query getNonRivianUserSession { getNonRivianUserSession { chargerId transactionId isRivianCharger vehicleChargerState { value updatedAt } } }",
+            "variables": {},
+        }
+        response = self.raw_graphql_query(url=RIVIAN_CHARGING_PATH, query=query, headers=headers)
+        return response.json()
+
+    def get_live_session_data(self, vehicle_id, transaction_id, charger_id):
+        headers = self.gateway_headers()
+        query = {
+            "operationName": "getLiveSessionData",
+            "query": "query getLiveSessionData($vehicleId: ID, $transactionId: ID, $chargerId: ID) "
+                     "{ getLiveSessionData(vehicleId: $vehicleId, transactionId: $transactionId, "
+                     "chargerId: $chargerId) "
+                     "{ isRivianCharger isFreeSession vehicleChargerState { value updatedAt } "
+                     "chargerId startTime timeElapsed timeRemaining { value updatedAt } kilometersChargedPerHour "
+                     "{ value updatedAt } power { value updatedAt } rangeAddedThisSession { value updatedAt } "
+                     "totalChargedEnergy { value updatedAt } timeRemaining { value updatedAt } vehicleChargerState "
+                     "{ value updatedAt } kilometersChargedPerHour { value updatedAt } currentPrice } }",
+            "variables": {
+                "vehicleId": vehicle_id,
+                "transactionId": transaction_id,
+                "chargerId": charger_id
+            },
+        }
+        response = self.raw_graphql_query(url=RIVIAN_CHARGING_PATH, query=query, headers=headers)
+        return response.json()
+
+
+    def get_live_session_history(self, vehicle_id):
+        headers = self.gateway_headers()
+        query = {
+            "operationName": "getLiveSessionHistory",
+            "query": "query getLiveSessionHistory($vehicleId: ID) { getLiveSessionHistory(vehicleId: $vehicleId) { chartData { kw time } } }",
+            "variables": {
+                "vehicleId": vehicle_id
+            },
+        }
+        response = self.raw_graphql_query(url=RIVIAN_CHARGING_PATH, query=query, headers=headers)
+        return response.json()
+
+
     # Vehicle commands require an HMAC signature to be sent with the request.
     # The HMAC is generated using the command name and the current timestamp,
     # using a shared key generated from the phone’s private key and the vehicle’s
