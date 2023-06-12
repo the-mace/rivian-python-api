@@ -1074,7 +1074,7 @@ def main():
         )
         decode_and_map(planned_trip)
 
-    if args.charging_schedule:
+    if args.charging_schedule or args.all:
         schedules = charging_schedule(vehicle_id, args.verbose)
         for s in schedules:
             print(f"Start Time: {s['startTime']}")
@@ -1086,7 +1086,7 @@ def main():
             print(f"Weekdays: {s['weekDays']}")
 
 
-    if args.charge_sessions or args.last_charge:
+    if args.charge_sessions or args.last_charge or args.all:
         sessions = charging_sessions(args.verbose)
         if args.last_charge:
             sessions = [sessions[-1]]
@@ -1108,7 +1108,7 @@ def main():
                 print(f"Range added rate: {rph:.1f} {distance_units}/h")
             print()
 
-    if args.charge_session:
+    if args.charge_session or args.all:
         session = charging_session(args.verbose)
         print(f"Charger ID: {session['chargerId']}")
         print(f"Transaction ID: {session['transactionId']}")
@@ -1116,7 +1116,7 @@ def main():
         print(f"Charging Active: {session['vehicleChargerState']['value'] == 'charging_active'}")
         print(f"Charging Updated: {show_local_time(session['vehicleChargerState']['updatedAt'])}")
 
-    if args.live_charging_session:
+    if args.live_charging_session or args.all:
         state = get_vehicle_state(vehicle_id, args.verbose)
         s = live_charging_session(vehicle_id=vehicle_id,
                                   verbose=args.verbose)
@@ -1141,7 +1141,7 @@ def main():
         print(f"Range added: {meters_to_distance_units(s['rangeAddedThisSession']['value']*1000, args.metric):.1f} {distance_units}")
         print(f"Total charged energy: {s['totalChargedEnergy']['value']} kW")
 
-    if args.live_charging_history:
+    if args.live_charging_history or args.all:
         s = live_charging_history(vehicle_id=vehicle_id,
                                   verbose=args.verbose)
         start_time = None
