@@ -57,17 +57,24 @@ class Rivian:
 
         response = self.raw_graphql_query(url=url, query=query, headers=headers)
         response_json = response.json()
-        login_data = response_json["data"]["login"]
-        if "otpToken" in login_data:
-            self.otp_needed = True
-            self._otp_token = login_data["otpToken"]
+        if response.status_code == 200 and response_json["data"] and "login" in response_json["data"]:
+            login_data = response_json["data"]["login"]
+            if "otpToken" in login_data:
+                self.otp_needed = True
+                self._otp_token = login_data["otpToken"]
+            else:
+                self._access_token = login_data["accessToken"]
+                self._refresh_token = login_data["refreshToken"]
+                self._user_session_token = login_data["userSessionToken"]
         else:
-            self._access_token = login_data["accessToken"]
-            self._refresh_token = login_data["refreshToken"]
-            self._user_session_token = login_data["userSessionToken"]
+            message = f"Status: {response.status_code}: Details: {response_json}"
+            print(f"Login failed: {message}")
+            raise Exception(message)
         return response
 
-    def login_with_otp(self, username, otpCode):
+    def login_with_otp(self, username, otpCode, otpToken=None):
+        if self._csrf_token == "":
+            self.create_csrf_token()
         url = RIVIAN_GATEWAY_PATH
         headers = HEADERS
         headers.update(
@@ -84,16 +91,21 @@ class Rivian:
             "variables": {
                 "email": username,
                 "otpCode": otpCode,
-                "otpToken": self._otp_token,
+                "otpToken": otpToken or self._otp_token,
             },
         }
 
         response = self.raw_graphql_query(url=url, query=query, headers=headers)
         response_json = response.json()
-        login_data = response_json["data"]["loginWithOTP"]
-        self._access_token = login_data["accessToken"]
-        self._refresh_token = login_data["refreshToken"]
-        self._user_session_token = login_data["userSessionToken"]
+        if response.status_code == 200 and response_json["data"] and "loginWithOTP" in response_json["data"]:
+            login_data = response_json["data"]["loginWithOTP"]
+            self._access_token = login_data["accessToken"]
+            self._refresh_token = login_data["refreshToken"]
+            self._user_session_token = login_data["userSessionToken"]
+        else:
+            message = f"Status: {response.status_code}: Details: {response_json}"
+            print(f"Login with otp failed: {message}")
+            raise Exception(message)
         return response
 
     def create_csrf_token(self):

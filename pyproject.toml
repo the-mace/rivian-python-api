@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rivian-python-api"
-version = "0.1.2"
+version = "0.1.3"
 authors = [
   { name="Robert Mason", email="rivian@crickers.com" },
 ]

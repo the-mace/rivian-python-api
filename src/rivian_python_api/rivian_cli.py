@@ -60,24 +60,42 @@ def get_rivian_object():
     return rivian
 
 
-def login(verbose):
+def login_with_password(verbose):
     rivian = Rivian()
     try:
         rivian.login(os.getenv('RIVIAN_USERNAME'), os.getenv('RIVIAN_PASSWORD'))
-    except Exception:
-        print("Authentication failed, check RIVIAN_USERNAME and RIVIAN_PASSWORD")
+    except Exception as e:
+        if verbose:
+            print(f"Authentication failed, check RIVIAN_USERNAME and RIVIAN_PASSWORD: {str(e)}")
+        return None
+    return rivian
+
+
+def login_with_otp(verbose, otp_token):
+    otpCode = input('Enter OTP: ')
+    rivian = Rivian()
+    try:
+        rivian.login_with_otp(
+            username=os.getenv('RIVIAN_USERNAME'),
+            otpCode=otpCode,
+            otpToken=otp_token)
+    except Exception as e:
+        if verbose:
+            print(f"Authentication failed, OTP mismatch: {str(e)}")
+        return None
+    return rivian
+
+
+def login(verbose):
+    # Intentionally don't use same Rivian object for login and subsequent calls
+    rivian = login_with_password(verbose)
+    if not rivian:
         return
-
     if rivian.otp_needed:
-        otpCode = input('Enter OTP: ')
-        try:
-            rivian.login_with_otp(username=os.getenv('RIVIAN_USERNAME'), otpCode=otpCode)
-        except Exception:
-            print("Authentication failed, OTP mismatch")
-            return
-
-    print("Login successful")
-    save_state(rivian)
+        rivian = login_with_otp(verbose, otp_token=rivian._otp_token)
+    if rivian:
+        print("Login successful")
+        save_state(rivian)
     return
 
 
