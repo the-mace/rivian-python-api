@@ -14,15 +14,6 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 load_dotenv()
 
-# Polling constantly while vehicle is awake keeps it awake, all times in seconds
-POLL_FREQUENCY = 30
-# If not sleeping and nothing changes for this period of time then do a VEHICLE_SLEEP_WAIT
-# Set to 0 for continual polling at POLL_FREQUENCY
-INACTIVITY_WAIT = 0
-# INACTIVITY_WAIT = 30 * 60
-# How long to stop polling to let car go to sleep
-VEHICLE_SLEEP_WAIT = 40 * 60
-
 PICKLE_FILE = 'rivian_auth.pickle'
 
 
@@ -588,6 +579,16 @@ def main():
     parser.add_argument('--user_info', help='Show user information', required=False, action='store_true')
     parser.add_argument('--ota', help='Show user information', required=False, action='store_true')
     parser.add_argument('--poll', help='Poll vehicle state', required=False, action='store_true')
+    parser.add_argument('--poll_frequency', help='Poll frequency', required=False, default=30, type=int)
+    parser.add_argument('--poll_show_all', help='Show all poll results even if no changes occurred', required=False, action='store_true')
+    parser.add_argument('--poll_inactivity_wait',
+                        help='If not sleeping and nothing changes for this period of time '
+                             'then do a poll_sleep_wait. Defaults to 0 for continual polling '
+                             'at poll_frequency',
+                        required=False, default=0, type=int)
+    parser.add_argument('--poll_sleep_wait',
+                        help='# How long to stop polling to let car go to sleep (depends on poll_inactivity_wait)',
+                        required=False, default=40*60, type=int)
     parser.add_argument('--query', help='Single poll instance (quick poll)', required=False, action='store_true')
     parser.add_argument('--metric', help='Use metric vs imperial units', required=False, action='store_true')
     parser.add_argument('--plan_trip', help='Plan a trip - starting soc, starting range in meters, origin lat,origin long,dest lat,dest long', required=False)
@@ -991,10 +992,10 @@ def main():
         # Charge State = charging_ready or charging_active
         # Charger Status = chrgr_sts_not_connected, chrgr_sts_connected_charging, chrgr_sts_connected_no_chrg
         if not single_poll:
-            print(f"Polling car every {POLL_FREQUENCY} seconds, only showing changes in data.")
-            if INACTIVITY_WAIT:
-                print(f"If 'ready' and inactive for {INACTIVITY_WAIT / 60:.0f} minutes will pause polling once for "
-                      f"every ready state cycle for {VEHICLE_SLEEP_WAIT / 60:.0f} minutes to allow car to go to sleep.")
+            print(f"Polling car every {args.poll_frequency} seconds, only showing changes in data.")
+            if args.poll_inactivity_wait:
+                print(f"If 'ready' and inactive for {args.poll_inactivity_wait / 60:.0f} minutes will pause polling once for "
+                      f"every ready state cycle for {args.poll_sleep_wait / 60:.0f} minutes to allow car to go to sleep.")
             print("")
 
         if args.privacy:
@@ -1018,7 +1019,7 @@ def main():
                     print(f"{datetime.now().strftime('%m/%d/%Y, %H:%M:%S %p %Z').strip()} Rivian API appears offline")
                 found_bad_response = True
                 last_state = None
-                time.sleep(POLL_FREQUENCY)
+                time.sleep(args.poll_frequency)
                 continue
             found_bad_response = False
             if last_power_state != 'ready' and state['powerState']['value'] == 'ready':
@@ -1051,25 +1052,25 @@ def main():
                     f"{state['chargerState']['value']}," \
                     f"{state['batteryLimit']['value']:.1f}%," \
                     f"{state['timeToEndOfCharge']['value'] // 60}h{state['timeToEndOfCharge']['value'] % 60}m"
-            if single_poll or current_state != last_state:
+            if args.poll_show_all or single_poll or current_state != last_state:
                 print(f"{datetime.now().strftime('%m/%d/%Y, %H:%M:%S %p %Z').strip()}," + current_state)
                 last_state_change = datetime.now()
             last_state = current_state
             if single_poll:
                 break
             if state['powerState']['value'] == 'sleep':
-                time.sleep(POLL_FREQUENCY)
+                time.sleep(args.poll_frequency)
             else:
                 delta = (datetime.now() - last_state_change).total_seconds()
-                if INACTIVITY_WAIT and not long_sleep_completed and delta >= INACTIVITY_WAIT:
+                if args.poll_inactivity_wait and not long_sleep_completed and delta >= args.poll_inactivity_wait:
                     print(f"{datetime.now().strftime('%m/%d/%Y, %H:%M:%S %p %Z').strip()} "
-                          f"Sleeping for {VEHICLE_SLEEP_WAIT / 60:.0f} minutes")
-                    time.sleep(VEHICLE_SLEEP_WAIT)
+                          f"Sleeping for {args.poll_sleep_wait / 60:.0f} minutes")
+                    time.sleep(args.poll_sleep_wait)
                     print(f"{datetime.now().strftime('%m/%d/%Y, %H:%M:%S %p %Z').strip()} "
-                          f"Back to polling every {POLL_FREQUENCY} seconds, showing changes only")
+                          f"Back to polling every {args.poll_frequency} seconds, showing changes only")
                     long_sleep_completed = True
                 else:
-                    time.sleep(POLL_FREQUENCY)
+                    time.sleep(args.poll_frequency)
 
     if args.vehicle or args.all:
         vehicle = get_vehicle(vehicle_id, args.verbose)
