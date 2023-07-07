@@ -899,20 +899,28 @@ def main():
             print(f"   Range: {kilometers_to_distance_units(state['distanceToEmpty']['value'], args.metric):.1f} {distance_units}")
             print(f"   Battery Limit: {state['batteryLimit']['value']:.1f}%")
             print(f"   Charging state: {state['chargerState']['value']}")
-            print(f"   Charger status: {state['chargerStatus']['value']}")
+            if state['chargerStatus']:
+                print(f"   Charger status: {state['chargerStatus']['value']}")
             print(f"   Time to end of charge: {state['timeToEndOfCharge']['value']}")
 
             print("OTA:")
             print(f"   Current Version: {state['otaCurrentVersion']['value']}")
             print(f"   Available version: {state['otaAvailableVersion']['value']}")
-            print(f"   Status: {state['otaStatus']['value']}")
-            print(f"   Install type: {state['otaInstallType']['value']}")
-            print(f"   Duration: {state['otaInstallDuration']['value']}")
-            print(f"   Download progress: {state['otaDownloadProgress']['value']}")
+            if state['otaStatus']:
+                print(f"   Status: {state['otaStatus']['value']}")
+            if state['otaInstallType']:
+                print(f"   Install type: {state['otaInstallType']['value']}")
+            if state['otaInstallDuration']:
+                print(f"   Duration: {state['otaInstallDuration']['value']}")
+            if state['otaDownloadProgress']:
+                print(f"   Download progress: {state['otaDownloadProgress']['value']}")
             print(f"   Install ready: {state['otaInstallReady']['value']}")
-            print(f"   Install progress: {state['otaInstallProgress']['value']}")
-            print(f"   Install time: {state['otaInstallTime']['value']}")
-            print(f"   Current Status: {state['otaCurrentStatus']['value']}")
+            if state['otaInstallProgress']:
+                print(f"   Install progress: {state['otaInstallProgress']['value']}")
+            if state['otaInstallTime']:
+                print(f"   Install time: {state['otaInstallTime']['value']}")
+            if state['otaCurrentStatus']:
+                print(f"   Current Status: {state['otaCurrentStatus']['value']}")
 
             print("Climate:")
             print(f"   Climate Interior Temp: {celsius_to_temp_units(state['cabinClimateInteriorTemperature']['value'], args.metric)}º{temp_units_string}")
@@ -924,10 +932,14 @@ def main():
             print(f"   Pet Mode: {state['petModeStatus']['value']}")
 
             print("Security:")
-            print(f"   Alarm active: {state['alarmSoundStatus']['value']}")
-            print(f"   Gear Guard Video: {state['gearGuardVideoStatus']['value']}")
-            print(f"   Gear Guard Mode: {state['gearGuardVideoMode']['value']}")
-            print(f"   Last Alarm: {show_local_time(state['alarmSoundStatus']['timeStamp'])}")
+            if state['alarmSoundStatus']:
+                print(f"   Alarm active: {state['alarmSoundStatus']['value']}")
+            if state['gearGuardVideoStatus']:
+                print(f"   Gear Guard Video: {state['gearGuardVideoStatus']['value']}")
+            if state['gearGuardVideoMode']:
+                print(f"   Gear Guard Mode: {state['gearGuardVideoMode']['value']}")
+            if state['alarmSoundStatus']:
+                print(f"   Last Alarm: {show_local_time(state['alarmSoundStatus']['timeStamp'])}")
             print(f"   Gear Guard Locked: {state['gearGuardLocked']['value'] == 'locked'}")
 
             print("Doors:")
@@ -1033,11 +1045,12 @@ def main():
                 current_state += \
                     f"{state['gnssLocation']['latitude']}," \
                     f"{state['gnssLocation']['longitude']},"
-            current_state += \
-                f"{state['chargerStatus']['value']}," \
-                f"{state['chargerState']['value']}," \
-                f"{state['batteryLimit']['value']:.1f}%," \
-                f"{state['timeToEndOfCharge']['value'] // 60}h{state['timeToEndOfCharge']['value'] % 60}m"
+            if state['chargerStatus']:
+                current_state += \
+                    f"{state['chargerStatus']['value']}," \
+                    f"{state['chargerState']['value']}," \
+                    f"{state['batteryLimit']['value']:.1f}%," \
+                    f"{state['timeToEndOfCharge']['value'] // 60}h{state['timeToEndOfCharge']['value'] % 60}m"
             if single_poll or current_state != last_state:
                 print(f"{datetime.now().strftime('%m/%d/%Y, %H:%M:%S %p %Z').strip()}," + current_state)
                 last_state_change = datetime.now()
