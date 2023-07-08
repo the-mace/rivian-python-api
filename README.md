@@ -12,7 +12,11 @@ the behavior of other vendors.
 
 The CLI has a polling option (--poll) which you can experiment with yourself, but leaving the 
 vehicle alone from a polling perspective or constantly hitting it via the API appears to have no impact 
-on when it goes to sleep.
+on when it goes to sleep. 
+
+You can modify polling frequency etc with the CLI options. Be careful as polling too frequently can cause your account to get locked out. 
+
+**It's strongly recommended that you use a non-primary driver account for API access** to avoid locking yourself out of your account and being unable to reset it on your own (by deleting/readding the secondary).
 
 Polling was also possible during a software update with no disruption to the update and it's possible
 to monitor software update progress that way.
@@ -34,6 +38,11 @@ it also limits the ability to extend the owners experience through third party p
 
 ### Missing & Unknown
 1. There does not appear to be an API call that returns `speed` for the vehicle. With odometer and polling you can calculate it. Example in the CLI
+2. If you lock yourself out of your account by asking for too much data too often (note that this isnt that easy to do) you'll get a response like: 
+
+`{'errors': [{'extensions': {'code': 'RATE_LIMIT'}, 'message': 'See server logs for error details', 'path': ['vehicleState']}], 'data': {'vehicleState': None}}`
+
+If thats on your primary account you'll need to involve Rivian support to get it unlocked and that will take time etc. Best to use a secondary account for API access.
 
 ## Dependencies
 
