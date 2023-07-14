@@ -342,7 +342,7 @@ def delivery(order_id, verbose):
     if verbose:
         print(f"delivery:\n{response_json}")
     vehicle = {}
-    if 'delivery' in response_json['data']:
+    if 'delivery' in response_json['data'] and response_json['data']['delivery']:
         vehicle['vin'] = response_json['data']['delivery']['vehicleVIN']
         vehicle['carrier'] = response_json['data']['delivery']['carrier']
         vehicle['status'] = response_json['data']['delivery']['status']
