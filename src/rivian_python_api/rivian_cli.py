@@ -342,10 +342,11 @@ def delivery(order_id, verbose):
     if verbose:
         print(f"delivery:\n{response_json}")
     vehicle = {}
-    vehicle['vin'] = response_json['data']['delivery']['vehicleVIN']
-    vehicle['carrier'] = response_json['data']['delivery']['carrier']
-    vehicle['status'] = response_json['data']['delivery']['status']
-    vehicle['appointmentDetails'] = response_json['data']['delivery']['appointmentDetails']
+    if 'delivery' in response_json['data']:
+        vehicle['vin'] = response_json['data']['delivery']['vehicleVIN']
+        vehicle['carrier'] = response_json['data']['delivery']['carrier']
+        vehicle['status'] = response_json['data']['delivery']['status']
+        vehicle['appointmentDetails'] = response_json['data']['delivery']['appointmentDetails']
     return vehicle
 
 
@@ -683,9 +684,11 @@ def main():
 
                 # Get delivery info
                 delivery_status = delivery(order['id'], args.verbose)
-                print(f"Delivery carrier: {delivery_status['carrier']}")
-                print(f"Delivery status: {delivery_status['status']}")
-                if delivery_status['appointmentDetails']:
+                if 'carrier' in delivery_status:
+                    print(f"Delivery carrier: {delivery_status['carrier']}")
+                if 'status' in delivery_status:
+                    print(f"Delivery status: {delivery_status['status']}")
+                if 'appointmentDetails' in delivery_status and delivery_status['appointmentDetails']:
                     print("Delivery appointment details:")
                     start = parse(delivery_status['appointmentDetails']['startDateTime'])
                     end = parse(delivery_status['appointmentDetails']['endDateTime'])
