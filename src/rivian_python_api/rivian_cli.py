@@ -302,7 +302,7 @@ def transaction_status(order_id, verbose):
     if verbose:
         print(f"transaction_status:\n{response_json}")
     status = {}
-    if "transactionStatus" in response_json['data']:
+    if response_json and 'data' in response_json and "transactionStatus" in response_json['data']:
         transaction_status = response_json['data']['transactionStatus']
         for s in (
             'titleAndReg',
