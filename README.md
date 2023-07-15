@@ -4,6 +4,8 @@
 
 Based on information from https://github.com/kaedenbrinkman/rivian-api.
 
+See https://github.com/the-mace/rivian-ruby-api for a Ruby version
+
 ## State of development
 
 ### Polling
