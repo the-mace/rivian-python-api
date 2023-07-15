@@ -302,22 +302,23 @@ def transaction_status(order_id, verbose):
     if verbose:
         print(f"transaction_status:\n{response_json}")
     status = {}
-    transaction_status = response_json['data']['transactionStatus']
-    for s in (
-        'titleAndReg',
-        'tradeIn',
-        'finance',
-        'delivery',
-        'insurance',
-        'documentUpload',
-        'contracts',
-        'payment',
-    ):
-        status[transaction_status[s]['consumerStatus']['displayOrder']] = {
-            'item': s,
-            'status': transaction_status[s]['sourceStatus']['status'],
-            'complete': transaction_status[s]['consumerStatus']['complete']
-        }
+    if "transactionStatus" in response_json['data']:
+        transaction_status = response_json['data']['transactionStatus']
+        for s in (
+            'titleAndReg',
+            'tradeIn',
+            'finance',
+            'delivery',
+            'insurance',
+            'documentUpload',
+            'contracts',
+            'payment',
+        ):
+            status[transaction_status[s]['consumerStatus']['displayOrder']] = {
+                'item': s,
+                'status': transaction_status[s]['sourceStatus']['status'],
+                'complete': transaction_status[s]['consumerStatus']['complete']
+            }
     return status
 
 
@@ -698,16 +699,17 @@ def main():
                     print("Delivery appointment details: Not available yet")
 
                 # Get transaction steps
-                transaction_steps = transaction_status(order['id'], args.verbose)
-                i = 1
-                completed = 0
-                for s in transaction_steps:
-                    if transaction_steps[s]['complete']:
-                        completed += 1
-                print(f"{completed}/{len(transaction_steps)} Steps Complete:")
-                for s in sorted(transaction_steps):
-                    print(f"   Step: {s}: {transaction_steps[s]['item']}: {transaction_steps[s]['status']}, Complete: {transaction_steps[s]['complete']}")
-                    i += 1
+                if order['id']:
+                    transaction_steps = transaction_status(order['id'], args.verbose)
+                    i = 1
+                    completed = 0
+                    for s in transaction_steps:
+                        if transaction_steps[s]['complete']:
+                            completed += 1
+                    print(f"{completed}/{len(transaction_steps)} Steps Complete:")
+                    for s in sorted(transaction_steps):
+                        print(f"   Step: {s}: {transaction_steps[s]['item']}: {transaction_steps[s]['status']}, Complete: {transaction_steps[s]['complete']}")
+                        i += 1
 
                 # Don't need to show this for now
                 # finance_summary(order['id'], args.verbose)
