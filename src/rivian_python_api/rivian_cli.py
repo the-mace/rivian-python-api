@@ -907,6 +907,7 @@ def main():
             print(f"   Battery Level: {state['batteryLevel']['value']:.1f}%")
             print(f"   Range: {kilometers_to_distance_units(state['distanceToEmpty']['value'], args.metric):.1f} {distance_units}")
             print(f"   Battery Limit: {state['batteryLimit']['value']:.1f}%")
+            print(f"   Battery Capacity: {state['batteryCapacity']['value']} kW")
             print(f"   Charging state: {state['chargerState']['value']}")
             if state['chargerStatus']:
                 print(f"   Charger status: {state['chargerStatus']['value']}")

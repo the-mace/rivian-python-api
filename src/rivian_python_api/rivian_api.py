@@ -336,6 +336,7 @@ class Rivian:
                     "batteryLevel { __typename timeStamp value } " \
                     "chargerState { __typename timeStamp value } " \
                     "batteryLimit { __typename timeStamp value } " \
+                    "batteryCapacity { __typename timeStamp value } " \
                     "remoteChargingAvailable { __typename timeStamp value } " \
                     "batteryHvThermalEvent { __typename timeStamp value } " \
                     "rangeThreshold { __typename timeStamp value } " \
