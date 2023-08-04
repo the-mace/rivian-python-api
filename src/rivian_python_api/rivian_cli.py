@@ -512,17 +512,21 @@ def test_graphql(verbose):
 
 def get_local_time(ts):
     if type(ts) is str:
-        t = parse(ts)
+        try:
+            t = parse(ts)
+        except:
+            return
     else:
         t = ts
     to_zone = tz.tzlocal()
-    t = t.astimezone(to_zone)
+    if t:
+        t = t.astimezone(to_zone)
     return t
 
 
 def show_local_time(ts):
     t = get_local_time(ts)
-    return t.strftime("%m/%d/%Y, %H:%M%p %Z")
+    return t.strftime("%m/%d/%Y, %H:%M%p %Z") if t else None
 
 
 def celsius_to_temp_units(c, metric=False):
@@ -1177,12 +1181,14 @@ def main():
         print(f"Charging Active: {s['vehicleChargerState']['value'] == 'charging_active'}")
         print(f"Charging Updated: {show_local_time(s['vehicleChargerState']['updatedAt'])}")
         print(f"Charge Start: {show_local_time(s['startTime'])}")
-        elapsed_seconds = int(s['timeElapsed'])
-        elapsed = get_elapsed_time_string(elapsed_seconds)
-        print(f"Elapsed Time: {elapsed}")
-        remaining_seconds = int(s['timeRemaining']['value'])
-        remaining = get_elapsed_time_string(remaining_seconds)
-        print(f"Remaining Time: {remaining}")
+        if s['timeElapsed']:
+            elapsed_seconds = int(s['timeElapsed'])
+            elapsed = get_elapsed_time_string(elapsed_seconds)
+            print(f"Elapsed Time: {elapsed}")
+        if s['timeRemaining'] and s['timeRemaining']['value']:
+            remaining_seconds = int(s['timeRemaining']['value'])
+            remaining = get_elapsed_time_string(remaining_seconds)
+            print(f"Remaining Time: {remaining}")
         print(f"Charge power: {s['power']['value']} kW")
         print(f"Charge rate: {meters_to_distance_units(s['kilometersChargedPerHour']['value']*1000, args.metric):.1f} {distance_units_string}")
         print(f"Range added: {meters_to_distance_units(s['rangeAddedThisSession']['value']*1000, args.metric):.1f} {distance_units}")
