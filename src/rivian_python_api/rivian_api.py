@@ -584,7 +584,8 @@ class Rivian:
                      "chargerId startTime timeElapsed timeRemaining { value updatedAt } kilometersChargedPerHour "
                      "{ value updatedAt } power { value updatedAt } rangeAddedThisSession { value updatedAt } "
                      "totalChargedEnergy { value updatedAt } timeRemaining { value updatedAt } vehicleChargerState "
-                     "{ value updatedAt } kilometersChargedPerHour { value updatedAt } currentPrice } }",
+                     "{ value updatedAt } kilometersChargedPerHour { value updatedAt } "
+                     "currentPrice soc { value } currentMiles { value } current { value } } }",
             "variables": {
                 "vehicleId": vehicle_id
             },

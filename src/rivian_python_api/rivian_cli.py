@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # encoding: utf-8
-import os
 import sys
 import argparse
 from rivian_api import *
@@ -1194,6 +1193,9 @@ def main():
         print(f"Charge rate: {meters_to_distance_units(s['kilometersChargedPerHour']['value']*1000, args.metric):.1f} {distance_units_string}")
         print(f"Range added: {meters_to_distance_units(s['rangeAddedThisSession']['value']*1000, args.metric):.1f} {distance_units}")
         print(f"Total charged energy: {s['totalChargedEnergy']['value']} kW")
+        print(f"State of Charge: {s['soc']['value']:.1f}%")
+        print(f"currentMiles: {kilometers_to_distance_units(s['currentMiles']['value'], args.metric):.1f} {distance_units}")
+        print(f"current: {s['current']['value']}")
 
     if args.live_charging_history or args.all:
         s = live_charging_history(vehicle_id=vehicle_id,
