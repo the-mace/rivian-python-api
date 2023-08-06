@@ -276,6 +276,7 @@ class Rivian:
                     "batteryLevel { value } " \
                     "distanceToEmpty { value } " \
                     "gnssLocation { latitude longitude } " \
+                    "gnssSpeed { value } " \
                     "chargerStatus { value } " \
                     "chargerState { value } " \
                     "batteryLimit { value } " \
@@ -286,6 +287,7 @@ class Rivian:
                     "vehicleState(id: $vehicleID) { __typename " \
                     "cloudConnection { __typename lastSync } " \
                     "gnssLocation { __typename latitude longitude timeStamp } " \
+                    "gnssSpeed { __typename timeStamp value } " \
                     "alarmSoundStatus { __typename timeStamp value } " \
                     "timeToEndOfCharge { __typename timeStamp value } " \
                     "doorFrontLeftLocked { __typename timeStamp value } " \
