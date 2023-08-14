@@ -124,17 +124,26 @@ def order_details(order_id, verbose):
     response_json = rivian.order(order_id=order_id)
     if verbose:
         print(f"order_details:\n{response_json}")
-    data = {
-        'vehicleId': response_json['data']['order']['vehicle']['vehicleId'],
-        'vin': response_json['data']['order']['vehicle']['vin'],
-        'modelYear': response_json['data']['order']['vehicle']['modelYear'],
-        'make': response_json['data']['order']['vehicle']['make'],
-        'model': response_json['data']['order']['vehicle']['model'],
-    }
-    for i in response_json['data']['order']['items']:
-        if i['configuration'] is not None:
-            for c in i['configuration']['options']:
-                data[c['groupName']] = c['optionName']
+    data = {}
+    if 'data' in response_json and 'order' in response_json['data']:
+        if 'vehicle' in response_json['data']['order']:
+            try:
+                data = {
+                    'vehicleId': response_json['data']['order']['vehicle']['vehicleId'],
+                    'vin': response_json['data']['order']['vehicle']['vin'],
+                    'modelYear': response_json['data']['order']['vehicle']['modelYear'],
+                    'make': response_json['data']['order']['vehicle']['make'],
+                    'model': response_json['data']['order']['vehicle']['model'],
+                }
+            except:
+                log.warning(f"Order details missing key items, "
+                            f"found: {response_json['data']['order']['vehicle']}")
+                pass
+    if 'items' in response_json['data']['order']:
+        for i in response_json['data']['order']['items']:
+            if i['configuration'] is not None:
+                for c in i['configuration']['options']:
+                    data[c['groupName']] = c['optionName']
     return data
 
 
