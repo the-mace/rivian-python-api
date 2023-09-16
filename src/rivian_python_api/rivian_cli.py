@@ -761,7 +761,7 @@ def main():
                 if args.vehicle_id:
                     if vehicle['vehicleId'] == args.vehicle_id:
                         found_vehicle = True
-                else:
+                elif 'vehicleId' in vehicle:
                     vehicle_id = vehicle['vehicleId']
                     found_vehicle = True
         if not found_vehicle:
