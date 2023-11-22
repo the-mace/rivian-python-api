@@ -392,12 +392,14 @@ def get_user(verbose):
     response_json = rivian.user()
     if verbose:
         print(f"get_user:\n{response_json}")
+    try:
+        phone = response_json['data']['user']['phone']['formatted']
+    except Exception as e:
+        phone = None
     user = {
         'userId': response_json['data']['user']['userId'],
         'email': response_json['data']['user']['email']['email'],
-        'phone': response_json['data']['user']['phone']['formatted']
-            if 'phone' in response_json['data']['user']
-               and 'formatted' in response_json['data']['user']['phone'] else None,
+        'phone': phone,
         'firstName': response_json['data']['user']['firstName'],
         'lastName': response_json['data']['user']['lastName'],
         'newsletterSubscription': response_json['data']['user']['newsletterSubscription'],
