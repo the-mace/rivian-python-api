@@ -395,7 +395,9 @@ def get_user(verbose):
     user = {
         'userId': response_json['data']['user']['userId'],
         'email': response_json['data']['user']['email']['email'],
-        'phone': response_json['data']['user']['phone']['formatted'],
+        'phone': response_json['data']['user']['phone']['formatted']
+            if 'phone' in response_json['data']['user']
+               and 'formatted' in response_json['data']['user']['phone'] else None,
         'firstName': response_json['data']['user']['firstName'],
         'lastName': response_json['data']['user']['lastName'],
         'newsletterSubscription': response_json['data']['user']['newsletterSubscription'],
