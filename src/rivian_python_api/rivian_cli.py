@@ -769,6 +769,13 @@ def main():
                     vehicle_id = vehicle['vehicleId']
                     found_vehicle = True
         if not found_vehicle:
+            user_info = user_information(verbose)
+            for v in user_info['vehicles']:
+                if 'id' in v:
+                    vehicle_id = v['id']
+                    found_vehicle = True
+                    break
+        if not found_vehicle:
             print(f"Didn't find vehicle ID {args.vehicle_id}")
             return -1
 
@@ -1220,8 +1227,9 @@ def main():
             if not start_time:
                 start_time = get_local_time(d['time'])
             end_time = get_local_time(d['time'])
-        elapsed = get_elapsed_time_string((end_time - start_time).total_seconds())
-        print(f"Elapsed Time: {elapsed}")
+        if start_time and end_time:
+            elapsed = get_elapsed_time_string((end_time - start_time).total_seconds())
+            print(f"Elapsed Time: {elapsed}")
 
     # Work in progress - TODO
     if args.command:
