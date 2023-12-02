@@ -926,6 +926,7 @@ def main():
             if not args.privacy:
                 print(f"Location: {state['gnssLocation']['latitude']},{state['gnssLocation']['longitude']}")
             print(f"Speed: {meters_to_distance_units(state['gnssSpeed']['value'], args.metric):.1f} {distance_units}/h")
+            print(f"Bearing: {state['gnssBearing']['value']:.1f} degrees")
 
             print("Battery:")
             print(f"   Battery Level: {state['batteryLevel']['value']:.1f}%")

@@ -288,6 +288,7 @@ class Rivian:
                     "cloudConnection { __typename lastSync } " \
                     "gnssLocation { __typename latitude longitude timeStamp } " \
                     "gnssSpeed { __typename timeStamp value } " \
+                    "gnssBearing { __typename timeStamp value } " \
                     "alarmSoundStatus { __typename timeStamp value } " \
                     "timeToEndOfCharge { __typename timeStamp value } " \
                     "doorFrontLeftLocked { __typename timeStamp value } " \
