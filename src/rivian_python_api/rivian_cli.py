@@ -102,7 +102,10 @@ def user_information(verbose):
 
 def vehicle_orders(verbose):
     rivian = get_rivian_object()
-    response_json = rivian.vehicle_orders()
+    try:
+        response_json = rivian.vehicle_orders()
+    except:
+        return []
     if verbose:
         print(f"orders:\n{response_json}")
     orders = []
@@ -223,6 +226,8 @@ def get_vehicle(vehicle_id, verbose):
     if verbose:
         print(f"get_vehicle:\n{response_json}")
     data = []
+    if 'data' not in response_json:
+        return data
     for u in response_json['data']['getVehicle']['invitedUsers']:
         if u['__typename'] != 'ProvisionedUser':
             continue
@@ -249,7 +254,7 @@ def get_vehicle_state(vehicle_id, verbose, minimal=False):
     try:
         response_json = rivian.get_vehicle_state(vehicle_id=vehicle_id, minimal=minimal)
     except Exception as e:
-        print(f"{str(e)}")
+        print(f"Error: {str(e)}")
         return None
     if verbose:
         print(f"get_vehicle_state:\n{response_json}")
