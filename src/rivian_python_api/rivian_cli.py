@@ -932,6 +932,12 @@ def main():
                 print(f"Location: {state['gnssLocation']['latitude']},{state['gnssLocation']['longitude']}")
             print(f"Speed: {meters_to_distance_units(state['gnssSpeed']['value'], args.metric):.1f} {distance_units}/h")
             print(f"Bearing: {state['gnssBearing']['value']:.1f} degrees")
+            print(f"Altitude: {state['gnssAltitude']['value']}")
+            print(f"Location Error:")
+            print(f"   Vertical {state['gnssError']['positionVertical']} m")
+            print(f"   Horizontal {state['gnssError']['positionHorizontal']} m")
+            print(f"   Speed {meters_to_distance_units(state['gnssError']['speed'], args.metric):.1f} {distance_units}/h")
+            print(f"   Bearing {state['gnssError']['bearing']} degrees")
 
             print("Battery:")
             print(f"   Battery Level: {state['batteryLevel']['value']:.1f}%")
@@ -942,6 +948,10 @@ def main():
             if state['chargerStatus']:
                 print(f"   Charger status: {state['chargerStatus']['value']}")
             print(f"   Time to end of charge: {state['timeToEndOfCharge']['value']}")
+            print(f"   Charging Time Estimation Validity: {state['chargingTimeEstimationValidity']['value']}")
+            print(f"   Limited Accel Cold: {state['limitedAccelCold']['value']}")
+            print(f"   Limited Regen Cold: {state['limitedRegenCold']['value']}")
+
 
             print("OTA:")
             print(f"   Current Version: {state['otaCurrentVersion']['value']}")
@@ -982,6 +992,7 @@ def main():
                 print(f"   Last Alarm: {show_local_time(state['alarmSoundStatus']['timeStamp'])}")
             print(f"   Gear Guard Locked: {state['gearGuardLocked']['value'] == 'locked'}")
 
+            print(f"Charge Port: {state['chargePortState']['value']}")
             print("Doors:")
             print(f"   Front left locked: {state['doorFrontLeftLocked']['value'] == 'locked'}")
             print(f"   Front left closed: {state['doorFrontLeftClosed']['value'] == 'closed'}")
@@ -997,6 +1008,7 @@ def main():
             print(f"   Front right closed: {state['windowFrontRightClosed']['value'] == 'closed'}")
             print(f"   Rear left closed: {state['windowRearLeftClosed']['value'] == 'closed'}")
             print(f"   Rear right closed: {state['windowRearRightClosed']['value'] == 'closed'}")
+            print(f"   Next Action: {state['windowsNextAction']['value']}")
 
             print("Seats:")
             print(f"   Front left Heat: {state['seatFrontLeftHeat']['value'] == 'On'}")
@@ -1008,22 +1020,36 @@ def main():
             print("   Frunk:")
             print(f"      Frunk locked: {state['closureFrunkLocked']['value'] == 'locked'}")
             print(f"      Frunk closed: {state['closureFrunkClosed']['value'] == 'closed'}")
+            print(f"      Frunk Next Action: {state['closureFrunkNextAction']['value']}")
 
             print("   Lift Gate:")
             print(f"      Lift Gate Locked: {state['closureLiftgateLocked']['value'] == 'locked'}")
             print(f"      Lift Gate Closed: {state['closureLiftgateClosed']['value']}")
+            print(f"      Lift Next Action: {state['closureLiftgateNextAction']['value']}")
 
             print("   Tonneau:")
             print(f"      Tonneau Locked: {state['closureTonneauLocked']['value']}")
             print(f"      Tonneau Closed: {state['closureTonneauClosed']['value']}")
 
+            print("Trailer:")
+            print(f"   Trailer Status: {state['trailerStatus']['value']}")
+            if state['rearHitchStatus']:
+                print(f"   Rear Hitch Status: {state['rearHitchStatus']['value']}")
+
             print("Maintenance:")
+            print(f"   Service Mode: {state['serviceMode']['value']}")
+            print(f"   Car Wash Mode: {state['carWashMode']['value']}")
             print(f"   Wiper Fluid: {state['wiperFluidState']['value']}")
             print("   Tire pressures:")
             print(f"      Front Left: {state['tirePressureStatusFrontLeft']['value']}")
             print(f"      Front Right: {state['tirePressureStatusFrontRight']['value']}")
             print(f"      Rear Left: {state['tirePressureStatusRearLeft']['value']}")
             print(f"      Rear Right: {state['tirePressureStatusRearRight']['value']}")
+            print(f"   12V Battery: {state['twelveVoltBatteryHealth']['value']}")
+            print(f"   btmFf Hardware Failure Status {state['btmFfHardwareFailureStatus']['value']}")
+            print(f"   btmIc Hardware Failure Status {state['btmIcHardwareFailureStatus']['value']}")
+            print(f"   btmLfd Hardware Failure Status {state['btmLfdHardwareFailureStatus']['value']}")
+            print(f"   btmRfd Hardware Failure Status {state['btmRfdHardwareFailureStatus']['value']}")
 
     if args.poll or args.query or args.all:
         single_poll = args.query or args.all
