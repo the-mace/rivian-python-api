@@ -289,6 +289,8 @@ class Rivian:
                     "gnssLocation { __typename latitude longitude timeStamp } " \
                     "gnssSpeed { __typename timeStamp value } " \
                     "gnssBearing { __typename timeStamp value } " \
+                    "gnssAltitude { __typename timeStamp value } " \
+                    "gnssError { __typename timeStamp positionVertical positionHorizontal speed bearing } " \
                     "alarmSoundStatus { __typename timeStamp value } " \
                     "timeToEndOfCharge { __typename timeStamp value } " \
                     "doorFrontLeftLocked { __typename timeStamp value } " \
@@ -307,11 +309,14 @@ class Rivian:
                     "windowFrontRightCalibrated { __typename timeStamp value } " \
                     "windowRearLeftCalibrated { __typename timeStamp value } " \
                     "windowRearRightCalibrated { __typename timeStamp value } " \
+                    "windowsNextAction { __typename timeStamp value } " \
                     "closureFrunkLocked { __typename timeStamp value } " \
                     "closureFrunkClosed { __typename timeStamp value } " \
+                    "closureFrunkNextAction { __typename timeStamp value } " \
                     "gearGuardLocked { __typename timeStamp value } " \
                     "closureLiftgateLocked { __typename timeStamp value } " \
                     "closureLiftgateClosed { __typename timeStamp value } " \
+                    "closureLiftgateNextAction { __typename timeStamp value } " \
                     "windowRearLeftClosed { __typename timeStamp value } " \
                     "windowRearRightClosed { __typename timeStamp value } " \
                     "closureSideBinLeftLocked { __typename timeStamp value } " \
@@ -379,6 +384,20 @@ class Rivian:
                     "seatFrontRightVent { __typename timeStamp value } " \
                     "chargerDerateStatus { __typename timeStamp value } " \
                     "driveMode { __typename timeStamp value } " \
+                    "limitedAccelCold { __typename timeStamp value } " \
+                    "limitedRegenCold { __typename timeStamp value } " \
+                    "twelveVoltBatteryHealth { __typename timeStamp value } " \
+                    "serviceMode { __typename timeStamp value } " \
+                    "trailerStatus { __typename timeStamp value } " \
+                    "btmFfHardwareFailureStatus { __typename timeStamp value } " \
+                    "btmIcHardwareFailureStatus { __typename timeStamp value } " \
+                    "btmLfdHardwareFailureStatus { __typename timeStamp value } " \
+                    "btmRfHardwareFailureStatus { __typename timeStamp value } " \
+                    "btmRfdHardwareFailureStatus { __typename timeStamp value } " \
+                    "carWashMode { __typename timeStamp value } " \
+                    "chargePortState { __typename timeStamp value } " \
+                    "chargingTimeEstimationValidity { __typename timeStamp value } " \
+                    "rearHitchStatus { __typename timeStamp value } " \
                     "} }"
 
         query = {
