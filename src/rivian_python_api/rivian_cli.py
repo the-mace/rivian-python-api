@@ -885,9 +885,11 @@ def main():
             print(f"   Kind: {v['vehicle']['modelYear']} {v['vehicle']['make']} {v['vehicle']['model']}")
             print(f"   General assembly date: {v['vehicle']['actualGeneralAssemblyDate']}")
             print(f"   OTA early access: {v['vehicle']['otaEarlyAccessStatus']}")
-            print("   Features:")
-            for f in v['vehicle']['vehicleState']['supportedFeatures']:
-                print(f"      {f['name']}: {f['status']}")
+            if ('vehicleState' in v['vehicle'] and v['vehicle']['vehicleState'] and
+                    'supportedFeatures' in v['vehicle']['vehicleState']):
+                print("   Features:")
+                for f in v['vehicle']['vehicleState']['supportedFeatures']:
+                    print(f"      {f['name']}: {f['status']}")
         for p in user_info['enrolledPhones']:
             print("Enrolled phones:")
             for d in p['enrolled']:
