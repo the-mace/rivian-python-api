@@ -1048,10 +1048,14 @@ def main():
             print(f"      Rear Left: {state['tirePressureStatusRearLeft']['value']}")
             print(f"      Rear Right: {state['tirePressureStatusRearRight']['value']}")
             print(f"   12V Battery: {state['twelveVoltBatteryHealth']['value']}")
-            print(f"   btmFf Hardware Failure Status {state['btmFfHardwareFailureStatus']['value']}")
-            print(f"   btmIc Hardware Failure Status {state['btmIcHardwareFailureStatus']['value']}")
-            print(f"   btmLfd Hardware Failure Status {state['btmLfdHardwareFailureStatus']['value']}")
-            print(f"   btmRfd Hardware Failure Status {state['btmRfdHardwareFailureStatus']['value']}")
+            if state['btmFfHardwareFailureStatus']:
+                print(f"   btmFf Hardware Failure Status {state['btmFfHardwareFailureStatus']['value']}")
+            if state['btmIcHardwareFailureStatus']:
+                print(f"   btmIc Hardware Failure Status {state['btmIcHardwareFailureStatus']['value']}")
+            if state['btmLfdHardwareFailureStatus']:
+                print(f"   btmLfd Hardware Failure Status {state['btmLfdHardwareFailureStatus']['value']}")
+            if state['btmRfdHardwareFailureStatus']:
+                print(f"   btmRfd Hardware Failure Status {state['btmRfdHardwareFailureStatus']['value']}")
 
     if args.poll or args.query or args.all:
         single_poll = args.query or args.all
@@ -1162,7 +1166,7 @@ def main():
             if len(args.plan_trip.split(',')) == 4:
                 starting_soc, starting_range, origin_place, dest_place = args.plan_trip.split(',')
                 origin_lat, origin_long = extract_lat_long(origin_place)
-                dest_lat, dest_long = extract_lat_long(dest_place) 
+                dest_lat, dest_long = extract_lat_long(dest_place)
             else:
                 starting_soc, starting_range, origin_lat, origin_long, dest_lat, dest_long = args.plan_trip.split(',')
 
