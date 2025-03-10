@@ -1,11 +1,12 @@
 repo_name: the-mace/rivian-python-api
-report_id: ab368ab65a6b000fd4f352bc32c8251f
+report_id: 3d8aa6e2c38f2928ae86713f37250a0f
+version: 0.1
 repo_type: Public
-timestamp: '2023-12-14T09:30:24+00:00'
+timestamp: '2024-02-29T18:04:11+00:00'
 requested_by: the-mace
 provider: github
 branch: main
-detected_tools_count: 11
+detected_tools_count: 9
 tools:
 - name: Python
   description: A clear and powerful object-oriented programming language, comparable
@@ -16,18 +17,8 @@ tools:
   category: Languages & Frameworks
   sub_category: Languages
   image_url: https://img.stackshare.io/service/993/pUBY5pVj.png
+  detection_source_url: https://github.com/the-mace/rivian-python-api
   detection_source: Repo Metadata
-- name: pgvector
-  description: Open-source vector similarity search for Postgres
-  website_url: https://github.com/pgvector/pgvector/
-  open_source: false
-  hosted_saas: false
-  category: Data Stores
-  sub_category: Database Tools
-  image_url: https://img.stackshare.io/service/109221/default_b888cdf5617d936aa6aacf130911906955508639.png
-  detection_source: pyproject.toml
-  last_updated_by: Rob
-  last_updated_on: 2023-02-25 21:03:19.000000000 Z
 - name: Git
   description: Fast, scalable, distributed revision control system
   website_url: http://git-scm.com/
@@ -36,6 +27,7 @@ tools:
   category: Build, Test, Deploy
   sub_category: Version Control System
   image_url: https://img.stackshare.io/service/1046/git.png
+  detection_source_url: https://github.com/the-mace/rivian-python-api
   detection_source: Repo Metadata
 - name: PyPI
   description: A repository of software for the Python programming language
@@ -45,20 +37,10 @@ tools:
   category: Build, Test, Deploy
   sub_category: Hosted Package Repository
   image_url: https://img.stackshare.io/service/12572/-RIWgodF_400x400.jpg
+  detection_source_url: https://github.com/the-mace/rivian-python-api/blob/main/requirements.txt
   detection_source: requirements.txt
   last_updated_by: Geoffrey Kruse
   last_updated_on: 2023-04-12 18:46:19.000000000 Z
-- name: LangChain
-  description: Build AI apps with LLMs through composability
-  website_url: https://github.com/hwchase17/langchain
-  open_source: true
-  hosted_saas: false
-  category: Communications
-  sub_category: Large Language Model Tools
-  image_url: https://img.stackshare.io/service/48790/default_5b6c6b73f1ff3775c85d2a1ba954cb87e30cbf13.jpg
-  detection_source: pyproject.toml
-  last_updated_by: Rob
-  last_updated_on: 2023-02-25 21:03:19.000000000 Z
 - name: Shell
   description: A shell is a text-based terminal, used for manipulating programs and
     files. Shell scripts typically manage program execution.
@@ -68,6 +50,7 @@ tools:
   category: Languages & Frameworks
   sub_category: Languages
   image_url: https://img.stackshare.io/service/4631/default_c2062d40130562bdc836c13dbca02d318205a962.png
+  detection_source_url: https://github.com/the-mace/rivian-python-api
   detection_source: Repo Metadata
 - name: geopy
   description: Python Geocoding Toolbox
@@ -78,6 +61,7 @@ tools:
   category: Libraries
   sub_category: PyPI Packages
   image_url: https://img.stackshare.io/package/20597/default_765f8741ddac0d2e816e17438b35e7fda5019b4a.png
+  detection_source_url: https://github.com/the-mace/rivian-python-api/blob/main/requirements.txt
   detection_source: requirements.txt
   last_updated_by: Rob
   last_updated_on: 2023-04-18 13:55:06.000000000 Z
@@ -90,6 +74,7 @@ tools:
   category: Libraries
   sub_category: PyPI Packages
   image_url: https://img.stackshare.io/package/20062/default_7d86b2789b7e98a881e37db483c09c6a1aa3e995.png
+  detection_source_url: https://github.com/the-mace/rivian-python-api/blob/main/requirements.txt
   detection_source: requirements.txt
   last_updated_by: Geoffrey Kruse
   last_updated_on: 2023-04-12 18:46:19.000000000 Z
@@ -102,6 +87,7 @@ tools:
   category: Libraries
   sub_category: PyPI Packages
   image_url: https://img.stackshare.io/package/19833/default_58dbe7b4d7ec447b62773209af0f9a31bbabf5bd.png
+  detection_source_url: https://github.com/the-mace/rivian-python-api/blob/main/requirements.txt
   detection_source: requirements.txt
   last_updated_by: Geoffrey Kruse
   last_updated_on: 2023-04-12 18:46:19.000000000 Z
@@ -114,6 +100,7 @@ tools:
   category: Libraries
   sub_category: PyPI Packages
   image_url: https://img.stackshare.io/package/20095/default_3141eabecdd8efa55de73a33c43f2ac0d5bbf954.png
+  detection_source_url: https://github.com/the-mace/rivian-python-api/blob/main/requirements.txt
   detection_source: requirements.txt
   last_updated_by: Geoffrey Kruse
   last_updated_on: 2023-04-12 18:46:19.000000000 Z
@@ -126,6 +113,7 @@ tools:
   category: Libraries
   sub_category: PyPI Packages
   image_url: https://img.stackshare.io/package/19826/default_d7c684bf2673f008a9f02ac93901229297a22d7e.png
+  detection_source_url: https://github.com/the-mace/rivian-python-api/blob/main/requirements.txt
   detection_source: requirements.txt
   last_updated_by: Rob
   last_updated_on: 2023-04-18 13:55:06.000000000 Z
