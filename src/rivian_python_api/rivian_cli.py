@@ -311,7 +311,12 @@ def get_ota_info(vehicle_id, verbose):
 
 def transaction_status(order_id, verbose):
     rivian = get_rivian_object()
-    response_json = rivian.transaction_status(order_id)
+    try:
+        response_json = rivian.transaction_status(order_id)
+    except Exception as e:
+        if verbose:
+            print(f"Error getting transaction status for {order_id}")
+        return None
     if verbose:
         print(f"transaction_status:\n{response_json}")
     status = {}
@@ -724,16 +729,22 @@ def main():
 
                 # Get transaction steps
                 if order['id']:
-                    transaction_steps = transaction_status(order['id'], args.verbose)
+                    transaction_steps = None
+                    try:
+                        transaction_steps = transaction_status(order['id'], args.verbose)
+                    except Exception as e:
+                        if verbose:
+                            print(f"Error getting transaction status for {order_id}")
                     i = 1
                     completed = 0
-                    for s in transaction_steps:
-                        if transaction_steps[s]['complete']:
-                            completed += 1
-                    print(f"{completed}/{len(transaction_steps)} Steps Complete:")
-                    for s in sorted(transaction_steps):
-                        print(f"   Step: {s}: {transaction_steps[s]['item']}: {transaction_steps[s]['status']}, Complete: {transaction_steps[s]['complete']}")
-                        i += 1
+                    if transaction_steps:
+                        for s in transaction_steps:
+                            if transaction_steps[s]['complete']:
+                                completed += 1
+                        print(f"{completed}/{len(transaction_steps)} Steps Complete:")
+                        for s in sorted(transaction_steps):
+                            print(f"   Step: {s}: {transaction_steps[s]['item']}: {transaction_steps[s]['status']}, Complete: {transaction_steps[s]['complete']}")
+                            i += 1
 
                 # Don't need to show this for now
                 # finance_summary(order['id'], args.verbose)
