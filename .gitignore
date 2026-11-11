@@ -100,8 +100,10 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# pickle files
+# pickle files (rivian_auth.pickle holds live auth tokens; the second
+# pattern also covers copies like rivian_auth.pickle.bak)
 *.pickle
+rivian_auth.pickle*
 
 # IDE
 .idea/
